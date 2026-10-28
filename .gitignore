@@ -1,0 +1,16 @@
+# No se sube el archivo de variables de entorno
+
+.env
+
+# --- Python ---
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# --- Editores ---
+.idea/
+.vscode/
+
+# --- Sistema ---
+.DS_Store
