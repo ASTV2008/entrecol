@@ -1,0 +1,46 @@
+// MER (notación de Chen) - Etapa 0: estado original entregado por el cliente
+graph MER_Etapa0 {
+    layout=neato; overlap=false; sep="+12"; splines=line; outputorder=edgesfirst;
+    label="MER - Etapa 0: estado original (2 entidades)"; labelloc=t; fontsize=20; fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white];
+    edge [fontname="Helvetica", fontsize=13, color="#444444"];
+
+    // ---- Entidades (rectángulos) ----
+    EMPLEADO [shape=box, width=1.6, height=0.6, fontsize=14, label=<<B>EMPLEADO</B>>, fillcolor="#dbe9f6", pos="0,0!"];
+    NOVEDAD  [shape=box, width=1.6, height=0.6, fontsize=14, label=<<B>NOVEDAD</B>>,  fillcolor="#dbe9f6", pos="9,0!"];
+
+    // ---- Relación (rombo) ----
+    TIENE [shape=diamond, width=1.5, height=0.9, label="tiene", fillcolor="#fde9c9", pos="4.5,0!"];
+    EMPLEADO -- TIENE [label="1", headlabel="", taillabel=""];
+    TIENE -- NOVEDAD  [label="N"];
+
+    // ---- Atributos de EMPLEADO (óvalos) ----
+    node [shape=ellipse];
+    e1 [label=<<U>código</U>>, pos="-3.2,3.2!"];
+    e2 [label="nombre_empleado", pos="-0.8,3.9!"];
+    e3 [label="dependencia", pos="2.0,3.6!"];
+    e4 [label="cargo", pos="3.4,2.2!"];
+    e5 [label="fecha_ingreso", pos="-4.3,0.8!"];
+    e6 [label="eps", pos="-4.2,-1.2!"];
+    e7 [label="arl", pos="-3.0,-2.9!"];
+    e8 [label="pensión", pos="-0.6,-3.7!"];
+    e9 [label="sueldo", pos="2.0,-3.2!"];
+    edge [color="#777777"];
+    EMPLEADO -- e1; EMPLEADO -- e2; EMPLEADO -- e3; EMPLEADO -- e4; EMPLEADO -- e5;
+    EMPLEADO -- e6; EMPLEADO -- e7; EMPLEADO -- e8; EMPLEADO -- e9;
+
+    // ---- Atributos de NOVEDAD (sin llave propia: falta el periodo) ----
+    n1  [label="novedad_incapacidad", pos="6.4,3.9!"];
+    n2  [label="novedad_vacaciones", pos="9.4,4.3!"];
+    n3  [label="días_trabajados", pos="12.2,3.4!"];
+    n4  [label="días_incapacidad", pos="13.3,1.7!"];
+    n5  [label="días_vacaciones", pos="13.5,0!"];
+    n6  [label="fecha_inicio_vacaciones", pos="13.2,-1.8!"];
+    n7  [label="fecha_fin_vacaciones", pos="11.8,-3.3!"];
+    n8  [label="fecha_inicio_incapacidad", pos="8.8,-4.0!"];
+    n9  [label="fecha_fin_incapacidad", pos="6.0,-3.5!"];
+    n10 [label="bonificación", pos="5.8,-1.9!"];
+    n11 [label="transporte", pos="6.2,2.1!"];
+    NOVEDAD -- n1; NOVEDAD -- n2; NOVEDAD -- n3; NOVEDAD -- n4; NOVEDAD -- n5; NOVEDAD -- n6;
+    NOVEDAD -- n7; NOVEDAD -- n8; NOVEDAD -- n9; NOVEDAD -- n10; NOVEDAD -- n11;
+}
