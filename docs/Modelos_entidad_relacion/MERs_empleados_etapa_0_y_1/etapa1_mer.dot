@@ -1,0 +1,49 @@
+// MER (notación de Chen) - Etapa 1: catálogos y eliminación de la dependencia transitiva
+graph MER_Etapa1 {
+    layout=neato; overlap=false; splines=line; outputorder=edgesfirst;
+    label=<<B>MER - Etapa 1: catálogos</B><BR/><FONT POINT-SIZE="11">Subrayado = llave  |  Doble borde = entidad débil / relación identificadora  |  NOVEDAD sin cambios en esta etapa (se rediseña en la Etapa 2)</FONT>>;
+    labelloc=t; fontsize=20; fontname="Helvetica";
+    node [fontname="Helvetica", fontsize=11, style=filled, fillcolor=white];
+    edge [fontname="Helvetica", fontsize=13, color="#444444"];
+
+    // ---- Entidades ----
+    node [shape=box, width=1.7, height=0.6, fontsize=14, fillcolor="#dbe9f6"];
+    EMPLEADO      [label=<<B>EMPLEADO</B>>, pos="0,0!"];
+    NOVEDAD       [label=<<B>NOVEDAD</B>>,  pos="9,0!", fillcolor="#eeeeee"];
+    DEPENDENCIA   [label=<<B>DEPENDENCIA</B>>, pos="-14,0!"];
+    CARGO         [label=<<B>CARGO</B>>, peripheries=2, pos="-7,0!"];
+    EPS           [label=<<B>EPS</B>>, pos="0,6.2!"];
+    ARL           [label=<<B>ARL</B>>, pos="-3,-6.2!"];
+    FONDO_PENSION [label=<<B>FONDO_PENSIÓN</B>>, pos="3,-6.2!"];
+
+    // ---- Relaciones ----
+    node [shape=diamond, width=1.6, height=0.9, fontsize=11, fillcolor="#fde9c9"];
+    AGRUPA     [label="agrupa", peripheries=2, pos="-10.5,0!"];
+    DESEMPENA  [label="desempeña", pos="-3.5,0!"];
+    AFILIA     [label="afilia", pos="0,3.2!"];
+    CUBRE      [label="cubre", pos="-3,-3.2!"];
+    ADMINISTRA [label="administra", pos="3,-3.2!"];
+    TIENE      [label="tiene", pos="4.5,0!"];
+
+    DEPENDENCIA -- AGRUPA     [label="1"];  AGRUPA     -- CARGO     [label="N", color="black", penwidth=2.2];
+    CARGO       -- DESEMPENA  [label="1"];  DESEMPENA  -- EMPLEADO [label="N"];
+    EPS         -- AFILIA     [label="1"];  AFILIA     -- EMPLEADO [label="N"];
+    ARL         -- CUBRE      [label="1"];  CUBRE      -- EMPLEADO [label="N"];
+    FONDO_PENSION -- ADMINISTRA [label="1"]; ADMINISTRA -- EMPLEADO [label="N"];
+    EMPLEADO    -- TIENE      [label="1"];  TIENE      -- NOVEDAD  [label="N"];
+
+    // ---- Atributos ----
+    node [shape=ellipse, width=0.5, height=0.4, fontsize=11, fillcolor=white];
+    edge [color="#777777", fontsize=11];
+    c1 [label=<<U>código</U>>, pos="-3.0,2.8!"];
+    c2 [label="nombre_empleado", pos="3.0,2.9!"];
+    c3 [label="fecha_ingreso", pos="-5.8,-2.6!"];
+    c4 [label="sueldo", pos="6.0,-2.6!"];
+    EMPLEADO -- c1; EMPLEADO -- c2; EMPLEADO -- c3; EMPLEADO -- c4;
+
+    d1 [label=<<U>nombre</U>>, pos="-14,2.4!"];     DEPENDENCIA -- d1;
+    k1 [label=<<U>nombre</U>>, pos="-7,2.4!"];      CARGO -- k1;
+    p1 [label=<<U>nombre</U>>, pos="3.4,6.2!"];     EPS -- p1;
+    a1 [label=<<U>nombre</U>>, pos="-6,-6.2!"];     ARL -- a1;
+    f1 [label=<<U>nombre</U>>, pos="6.4,-6.2!"];    FONDO_PENSION -- f1;
+}
