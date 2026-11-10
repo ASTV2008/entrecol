@@ -1,0 +1,6 @@
+# Dependencias del backend (versiones fijadas: son las probadas).
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+SQLAlchemy==2.1.8
+PyMySQL==1.2.3
+pydantic-settings==2.16.2
