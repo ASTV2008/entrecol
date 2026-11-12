@@ -4,3 +4,6 @@ uvicorn[standard]==0.54.0
 SQLAlchemy==2.1.8
 PyMySQL==1.2.3
 pydantic-settings==2.16.2
+
+# Pruebas automáticas. Más adelante se separará en un requirements-dev.txt.
+pytest==9.2.0
