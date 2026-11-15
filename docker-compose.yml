@@ -45,6 +45,7 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./backend:/app:Z     # el código editado en tu PC se ve dentro del contenedor
+      - ./docs/bases_de_datos_iniciales:/data:ro,Z   # datos de la empresa (solo lectura)
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
 volumes:
