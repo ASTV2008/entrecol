@@ -2,6 +2,7 @@
 
 Uso (dentro del contenedor de la API):
     python -m app.etl.cli peliculas /data/movies.dat              # carga y guarda
+    python -m app.etl.cli libros /data/Books.json                 # ídem para libros
     python -m app.etl.cli peliculas /data/movies.dat --simulacro  # carga, muestra el informe y DESHACE todo
 
 Nota: un simulacro (o una carga cancelada) no devuelve los números autoincrementales que consumió,
@@ -18,12 +19,14 @@ from sqlalchemy.orm import Session
 
 from app.db.session import SessionLocal
 from app.etl.common import ErrorDeArchivo, InformeCarga
+from app.etl.libros.service import cargar_libros
 from app.etl.peliculas.service import cargar_peliculas
 
 # Cada fuente de datos se registra aquí. Agregar libros o nómina será añadir una línea,
 # sin modificar el resto del programa (principio abierto/cerrado).
 CARGADORES: dict[str, Callable[[BinaryIO, Session], InformeCarga]] = {
     "peliculas": cargar_peliculas,
+    "libros": cargar_libros,
 }
 
 

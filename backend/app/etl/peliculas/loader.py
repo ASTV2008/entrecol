@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.orm import Session
 
+from app.etl.catalogos import asegurar_catalogo
 from app.etl.peliculas.transformer import PeliculaLimpia
 from app.models import Genero, Pelicula, pelicula_genero
 
@@ -41,27 +42,16 @@ class CargadorPeliculas:
 
     # ------------------------------------------------------------------ géneros
     def _asegurar_generos(self, peliculas: Sequence[PeliculaLimpia], resultado: ResultadoCarga) -> dict[str, int]:
-        """Crea los géneros que falten y devuelve {nombre_en_minúsculas: id_genero}.
+        """Crea los géneros que falten y devuelve {nombre: id_genero}.
 
-        La base trata 'Sci-Fi' y 'sci-fi' como el mismo género (colación _ci),
-        por eso se busca sin distinguir mayúsculas y se conserva la primera grafía.
+        La igualdad de nombres la decide la base (ver catalogos.py): 'Sci-Fi' y 'sci-fi'
+        son el mismo género y se conserva la primera grafía que aparezca.
         """
-        pedidos: dict[str, str] = {}
-        for pelicula in peliculas:
-            for genero in pelicula.generos:
-                pedidos.setdefault(genero.casefold(), genero)
-
-        existentes = self._ids_de_generos()
-        faltantes = [nombre for clave, nombre in pedidos.items() if clave not in existentes]
-        if faltantes:
-            self._sesion.execute(insert(Genero), [{"nombre": nombre} for nombre in faltantes])
-            existentes = self._ids_de_generos()
-        resultado.generos_nuevos = len(faltantes)
-        return existentes
-
-    def _ids_de_generos(self) -> dict[str, int]:
-        filas = self._sesion.execute(select(Genero.id_genero, Genero.nombre))
-        return {nombre.casefold(): id_genero for id_genero, nombre in filas}
+        catalogo = asegurar_catalogo(
+            self._sesion, Genero.id_genero, Genero.nombre, (g for p in peliculas for g in p.generos)
+        )
+        resultado.generos_nuevos = catalogo.nuevos
+        return catalogo.ids
 
     # ---------------------------------------------------------------- películas
     def _cargar_lote(self, lote: Sequence[PeliculaLimpia], ids_genero: dict[str, int], resultado: ResultadoCarga) -> None:
@@ -86,7 +76,7 @@ class CargadorPeliculas:
         nuevas: list[PeliculaLimpia] = []
         cambiadas: list[PeliculaLimpia] = []
         for pelicula in lote:
-            deseados = {ids_genero[g.casefold()] for g in pelicula.generos}
+            deseados = {ids_genero[g] for g in pelicula.generos}
             if pelicula.id_pelicula not in datos_actuales:
                 nuevas.append(pelicula)
             elif (
@@ -112,9 +102,9 @@ class CargadorPeliculas:
                 delete(pelicula_genero).where(pelicula_genero.c.id_pelicula.in_([p.id_pelicula for p in a_reescribir]))
             )
             vinculos = [
-                {"id_pelicula": p.id_pelicula, "id_genero": ids_genero[g.casefold()]}
+                {"id_pelicula": p.id_pelicula, "id_genero": id_genero}
                 for p in a_reescribir
-                for g in p.generos
+                for id_genero in sorted({ids_genero[g] for g in p.generos})   # sin repetidos
             ]
             if vinculos:
                 self._sesion.execute(insert(pelicula_genero), vinculos)

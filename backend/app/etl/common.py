@@ -31,6 +31,7 @@ class InformeCarga:
     """Resultado de una carga: qué se leyó, qué se guardó y qué se rechazó."""
 
     fuente: str
+    unidad_fila: str = "línea"   # cómo llamar a una fila en los mensajes ("línea" en texto, "registro" en JSON)
     leidas: int = 0
     aceptadas: int = 0
     nuevas: int = 0
@@ -61,7 +62,7 @@ class InformeCarga:
         if self.rechazos:
             texto.append(f"  Primeras {min(max_rechazos, self.rechazadas)} filas rechazadas:")
             for r in self.rechazos[:max_rechazos]:
-                texto.append(f"    línea {r.linea}: {r.motivo} -> {r.contenido!r}")
+                texto.append(f"    {self.unidad_fila} {r.linea}: {r.motivo} -> {r.contenido!r}")
         return "\n".join(texto)
 
     def a_dict(self) -> dict:

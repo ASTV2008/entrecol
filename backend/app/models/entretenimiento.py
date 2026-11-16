@@ -2,7 +2,7 @@
 from datetime import date
 from decimal import Decimal
 
-from sqlalchemy import Column, Date, ForeignKey, Index, Numeric, String, Table
+from sqlalchemy import CheckConstraint, Column, Date, ForeignKey, Index, Numeric, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -28,7 +28,10 @@ pelicula_genero = Table(
 
 class Pelicula(Base):
     __tablename__ = "pelicula"
-    __table_args__ = (Index("ix_pelicula_anio", "anio_estreno"),)
+    __table_args__ = (
+        Index("ix_pelicula_anio", "anio_estreno"),
+        CheckConstraint("anio_estreno BETWEEN 1800 AND 2100", name="ck_pelicula_anio"),
+    )
 
     id_pelicula: Mapped[int] = mapped_column(UInt, primary_key=True, autoincrement=False)
     titulo: Mapped[str] = mapped_column(String(200))
@@ -81,6 +84,7 @@ class Libro(Base):
     __table_args__ = (
         Index("ix_libro_calificacion", "calificacion_promedio"),
         Index("ix_libro_fecha_publicacion", "fecha_publicacion"),
+        CheckConstraint("calificacion_promedio BETWEEN 0 AND 5", name="ck_libro_calificacion"),
     )
 
     id_libro: Mapped[int] = mapped_column(UInt, primary_key=True, autoincrement=False)
@@ -113,6 +117,7 @@ class LibroAutor(Base):
     """Relación N:M libro-autor CON atributo propio (orden_autoria): por eso es una clase."""
 
     __tablename__ = "libro_autor"
+    __table_args__ = (CheckConstraint("orden_autoria >= 1", name="ck_libro_autor_orden"),)
 
     id_libro: Mapped[int] = mapped_column(
         UInt, ForeignKey("libro.id_libro", onupdate="CASCADE", ondelete="CASCADE"),

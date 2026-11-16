@@ -104,6 +104,16 @@ def test_lista_vacia_no_hace_nada(sesion):
     assert (r.nuevas, r.actualizadas, r.sin_cambios, r.generos_nuevos) == (0, 0, 0, 0)
 
 
+def test_generos_equivalentes_para_la_base_son_un_solo_genero_y_un_solo_vinculo(sesion):
+    """'Comédie' y 'Comedie' (tilde) son el mismo género para la base: no debe fallar ni duplicar el vínculo."""
+    r = CargadorPeliculas(sesion).cargar([peli(1, "A", 2000, "Comédie", "Comedie", "Drama"), peli(2, "B", 2001, "COMEDIE")])
+    assert r.generos_nuevos == 2
+    assert contar(sesion, Genero) == 2
+    assert contar(sesion, pelicula_genero) == 3          # película 1: 2 géneros; película 2: 1
+    assert generos_de(sesion, 1) == {"Comédie", "Drama"}
+    assert generos_de(sesion, 2) == {"Comédie"}
+
+
 # ----------------------------------------------------------------------- servicio
 def test_servicio_completo_con_filas_buenas_y_malas(sesion):
     informe = cargar_peliculas(
