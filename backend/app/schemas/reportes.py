@@ -34,6 +34,7 @@ class Grafico(BaseModel):
     etiquetas: list[str]                    # eje X (o porciones de la torta)
     series: list[Serie]                     # una serie en torta; varias en barras comparativas
     grupos: list[str] | None = None         # opcional: a qué grupo pertenece cada etiqueta (p. ej. su dependencia)
+    nota: str | None = None                 # opcional: aclaración que debe acompañar al gráfico
 
 
 # --------------------------------------------------------- reporte 1: nómina

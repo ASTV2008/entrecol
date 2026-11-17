@@ -24,3 +24,15 @@ def leer_rango(desde: str, hasta: str) -> tuple[tuple[int, int], tuple[int, int]
 
 def texto_periodo(anio: int, mes: int) -> str:
     return f"{mes:02d}/{anio}"
+
+
+MAX_ANIOS_GRAFICO = 300     # un rango más largo no cabe en un gráfico legible
+
+
+def leer_anios(desde: int | None, hasta: int | None, obligatorio: bool = True) -> tuple[int | None, int | None]:
+    """Valida un rango de años F1..F2 (AAAA). Con obligatorio=False se admite dejar uno o ambos extremos abiertos."""
+    if obligatorio and (desde is None or hasta is None):
+        raise ErrorDeParametro("Debe indicar 'desde' y 'hasta' (años en formato AAAA).")
+    if desde is not None and hasta is not None and desde > hasta:
+        raise ErrorDeParametro(f"El rango es inválido: 'desde' ({desde}) es posterior a 'hasta' ({hasta}).")
+    return desde, hasta
