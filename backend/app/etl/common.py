@@ -24,6 +24,7 @@ class Rechazo:
     linea: int       # posición de la fila en el archivo origen
     motivo: str      # explicación en lenguaje claro
     contenido: str   # fila original (recortada)
+    origen: str = ""  # dónde estaba la fila si el archivo tiene varias partes (p. ej. la hoja del Excel)
 
 
 @dataclass
@@ -62,7 +63,8 @@ class InformeCarga:
         if self.rechazos:
             texto.append(f"  Primeras {min(max_rechazos, self.rechazadas)} filas rechazadas:")
             for r in self.rechazos[:max_rechazos]:
-                texto.append(f"    {self.unidad_fila} {r.linea}: {r.motivo} -> {r.contenido!r}")
+                donde = f"{r.origen}, " if r.origen else ""
+                texto.append(f"    {donde}{self.unidad_fila} {r.linea}: {r.motivo} -> {r.contenido!r}")
         return "\n".join(texto)
 
     def a_dict(self) -> dict:
@@ -77,5 +79,8 @@ class InformeCarga:
             "sin_cambios": self.sin_cambios,
             "detalles": dict(self.detalles),
             "advertencias": list(self.advertencias),
-            "rechazos": [{"linea": r.linea, "motivo": r.motivo, "contenido": r.contenido} for r in self.rechazos],
+            "rechazos": [
+                {"linea": r.linea, "motivo": r.motivo, "contenido": r.contenido, "origen": r.origen}
+                for r in self.rechazos
+            ],
         }

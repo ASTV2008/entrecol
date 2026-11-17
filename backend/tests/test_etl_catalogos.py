@@ -62,3 +62,36 @@ def test_funciona_con_mas_nombres_que_el_tamano_de_los_lotes(sesion, monkeypatch
     assert r.ids["EDITORIAL 3"] == r.ids["Editorial 3"] and r.ids["Éditorial 5"] == r.ids["Editorial 5"]
     assert sesion.execute(select(func.count()).select_from(Editorial)).scalar_one() == 10
     assert _asegurar(sesion, *nombres).nuevos == 0
+
+
+# ------------------------------------------------------------ catálogo con padre
+from app.etl.catalogos import asegurar_catalogo_con_padre   # noqa: E402
+from app.models import Cargo, Dependencia                    # noqa: E402
+
+
+def _dependencias(sesion, *nombres):
+    return {n: i for n, i in asegurar_catalogo(sesion, Dependencia.id_dependencia, Dependencia.nombre, nombres).ids.items()}
+
+
+def test_con_padre_mismo_nombre_en_padres_distintos_son_filas_distintas(sesion):
+    d = _dependencias(sesion, "Ventas", "Contabilidad")
+    r = asegurar_catalogo_con_padre(sesion, Cargo.id_cargo, Cargo.id_dependencia, Cargo.nombre,
+                                    [(d["Ventas"], "Director"), (d["Contabilidad"], "Director")])
+    assert r.nuevos == 2
+    assert r.ids[(d["Ventas"], "Director")] != r.ids[(d["Contabilidad"], "Director")]
+
+
+def test_con_padre_la_base_decide_la_igualdad_dentro_del_padre(sesion):
+    d = _dependencias(sesion, "Ventas")
+    r = asegurar_catalogo_con_padre(sesion, Cargo.id_cargo, Cargo.id_dependencia, Cargo.nombre,
+                                    [(d["Ventas"], "Gerente"), (d["Ventas"], "GERENTE"), (d["Ventas"], "gérente")])
+    assert r.nuevos == 1
+    assert len(set(r.ids.values())) == 1 and len(r.ids) == 3
+
+
+def test_con_padre_segunda_llamada_no_crea_nada(sesion):
+    d = _dependencias(sesion, "Ventas")
+    pares = [(d["Ventas"], "Gerente")]
+    primero = asegurar_catalogo_con_padre(sesion, Cargo.id_cargo, Cargo.id_dependencia, Cargo.nombre, pares)
+    segundo = asegurar_catalogo_con_padre(sesion, Cargo.id_cargo, Cargo.id_dependencia, Cargo.nombre, pares)
+    assert segundo.nuevos == 0 and segundo.ids == primero.ids

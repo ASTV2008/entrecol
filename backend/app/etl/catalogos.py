@@ -15,7 +15,7 @@ CÓMO
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, field
 
-from sqlalchemy import String, literal, select, union_all
+from sqlalchemy import Integer, String, literal, select, union_all
 from sqlalchemy.dialects.mysql import insert as mysql_insert
 from sqlalchemy.orm import InstrumentedAttribute, Session
 
@@ -90,3 +90,60 @@ def asegurar_catalogo(
         nuevos=len({ids[nombre] for nombre in faltantes}),
         equivalentes=[tuple(g) for g in grupos.values() if len(g) > 1],
     )
+
+
+# ----------------------------------------------------------------- con padre
+@dataclass
+class ResultadoCatalogoConPadre:
+    ids: dict[tuple[int, str], int]    # (id del padre, nombre tal como vino) -> id
+    nuevos: int = 0
+
+
+def _resolver_ids_con_padre(
+    sesion: Session,
+    columna_id: InstrumentedAttribute,
+    columna_padre: InstrumentedAttribute,
+    columna_nombre: InstrumentedAttribute,
+    pares: Sequence[tuple[int, str]],
+) -> dict[tuple[int, str], int]:
+    modelo = columna_id.class_
+    ids: dict[tuple[int, str], int] = {}
+    for lote in _lotes(pares, TAMANO_CONSULTA):
+        pedidos = union_all(
+            *(select(literal(padre, Integer).label("p"), literal(nombre, String).label("n")) for padre, nombre in lote)
+        ).subquery("pedidos")
+        consulta = (
+            select(pedidos.c.p, pedidos.c.n, columna_id)
+            .select_from(pedidos)
+            .join(modelo, (columna_padre == pedidos.c.p) & (columna_nombre == pedidos.c.n))
+        )
+        for padre, nombre, id_ in sesion.execute(consulta):
+            ids[(padre, nombre)] = id_
+    return ids
+
+
+def asegurar_catalogo_con_padre(
+    sesion: Session,
+    columna_id: InstrumentedAttribute,
+    columna_padre: InstrumentedAttribute,
+    columna_nombre: InstrumentedAttribute,
+    pares: Iterable[tuple[int, str]],
+) -> ResultadoCatalogoConPadre:
+    """Como asegurar_catalogo, pero el nombre solo es único DENTRO de su padre.
+
+    Ejemplo: el cargo 'Director' puede existir en Ventas y en Contabilidad (son dos filas
+    distintas); dentro de Ventas, 'Director' y 'DIRECTOR' son la misma. Recibe pares
+    (id_dependencia, nombre_cargo) y devuelve el id de cada uno. No hace commit.
+    """
+    unicos = list(dict.fromkeys(pares))
+    ids = _resolver_ids_con_padre(sesion, columna_id, columna_padre, columna_nombre, unicos)
+    faltantes = [par for par in unicos if par not in ids]
+    if faltantes:
+        tabla = columna_id.class_.__table__
+        sentencia = mysql_insert(tabla).on_duplicate_key_update({columna_id.key: tabla.c[columna_id.key]})
+        for lote in _lotes(faltantes, TAMANO_INSERCION):
+            sesion.execute(sentencia, [{columna_padre.key: padre, columna_nombre.key: nombre} for padre, nombre in lote])
+        ids.update(_resolver_ids_con_padre(sesion, columna_id, columna_padre, columna_nombre, faltantes))
+        if any(par not in ids for par in faltantes):
+            raise RuntimeError("No se pudo resolver el id de algunos registros recién creados")
+    return ResultadoCatalogoConPadre(ids=ids, nuevos=len({ids[par] for par in faltantes}))

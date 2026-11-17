@@ -7,3 +7,6 @@ pydantic-settings==2.16.2
 
 # Pruebas automáticas. Más adelante se separará en un requirements-dev.txt.
 pytest==9.2.0
+
+# Lectura de Nomina.xlsx (ETL de nómina)
+openpyxl==3.1.5
