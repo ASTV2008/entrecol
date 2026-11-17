@@ -46,3 +46,18 @@ def sesion(motor_pruebas):
     sesion.close()
     transaccion.rollback()
     conexion.close()
+
+
+@pytest.fixture
+def cliente(sesion):
+    """Cliente HTTP de la API real, pero conectado a la sesión de pruebas (se deshace al terminar)."""
+    from fastapi.testclient import TestClient
+
+    from app.db.session import get_db
+    from app.main import app
+
+    app.dependency_overrides[get_db] = lambda: sesion
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.clear()

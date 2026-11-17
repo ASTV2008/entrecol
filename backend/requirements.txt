@@ -10,3 +10,6 @@ pytest==9.2.0
 
 # Lectura de Nomina.xlsx (ETL de nómina)
 openpyxl==3.1.5
+
+# Cliente HTTP de las pruebas de la API (fastapi.testclient)
+httpx==0.28.1
