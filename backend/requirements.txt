@@ -13,3 +13,6 @@ openpyxl==3.1.5
 
 # Cliente HTTP de las pruebas de la API (fastapi.testclient)
 httpx==0.28.1
+
+# Generación de PDF de reportes (tablas y gráficos vectoriales)
+reportlab==4.4.4
