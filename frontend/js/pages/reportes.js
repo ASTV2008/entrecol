@@ -112,6 +112,12 @@ const form = document.querySelector("#report-form");
 const selector = document.querySelector("#report-select");
 const filtros = document.querySelector("#report-filters");
 const mensaje = document.querySelector("#form-message");
+const botonDatos = document.querySelector("#report-data-button");
+const panelDatos = document.querySelector("#report-data-panel");
+const tituloDatos = document.querySelector("#report-data-title");
+const resumenDatos = document.querySelector("#report-data-summary");
+const mensajeDatos = document.querySelector("#report-data-message");
+const contenidoDatos = document.querySelector("#report-data-content");
 const vistaPrevia = document.querySelector("#pdf-preview");
 const espacioVacio = document.querySelector("#preview-empty");
 const botonDescarga = document.querySelector("#download-button");
@@ -130,10 +136,51 @@ let pdfDocumento;
 let tareaCargaPdf;
 let tareaRenderizado;
 let solicitudVistaPrevia;
+let solicitudDatos;
 let versionVistaPrevia = 0;
 let paginaActual = 1;
 let zoom = 1;
 let temporizadorRedimension = 0;
+const formatoNumero = new Intl.NumberFormat("es-CO", { maximumFractionDigits: 2 });
+const coloresGrafico = ["#2878a5", "#3a9d83", "#e09b45", "#8a6bb8", "#d66b65", "#4f9baa", "#b07a4f", "#6f8f55", "#c05a8f", "#6574b8"];
+const etiquetasCampos = {
+  codigo: "Código",
+  nombre: "Nombre",
+  total: "Total",
+  total_peliculas: "Películas distintas",
+  tasa_aporte_pension: "Tasa de aporte de pensión",
+  dependencia: "Dependencia",
+  cargo: "Cargo",
+  cantidad: "Cantidad",
+  fecha_ingreso: "Fecha de ingreso",
+  fecha_inicio: "Fecha de inicio",
+  fecha_fin: "Fecha de fin",
+  eps: "EPS",
+  fondo_pension: "Fondo de pensión",
+  aporte_pension: "Aporte de pensión",
+  sueldo: "Sueldo",
+  novedades: "Novedades",
+  dias_trabajados: "Días trabajados",
+  desde: "Desde",
+  hasta: "Hasta",
+  entidad_tipo: "Tipo de entidad",
+  entidad: "Entidad",
+  genero: "Género",
+  n: "Cantidad solicitada",
+  posicion: "Posición",
+  id_libro: "ID del libro",
+  id_pelicula: "ID de la película",
+  titulo: "Título",
+  calificacion: "Calificación",
+  num_calificaciones: "Calificaciones",
+  anio: "Año",
+  criterio: "Criterio",
+  pelicula: "Película",
+  generos: "Géneros",
+  tipo: "Tipo",
+  periodo: "Período",
+  dias: "Días",
+};
 
 function cargarPdfJs() {
   if (!pdfjsPromise) {
@@ -155,26 +202,421 @@ async function liberarDocumento() {
     tareaCargaPdf = null;
     await tarea.destroy();
   }
-  if (pdfDocumento) {
-    const documento = pdfDocumento;
-    pdfDocumento = null;
-    await documento.destroy();
-  }
+  pdfDocumento = null;
 }
 
-function cargarReportes() {
-  const grupos = new Map();
-  for (const reporte of reportes) {
-    if (!grupos.has(reporte.grupo)) {
-      const grupo = document.createElement("optgroup");
-      grupo.label = reporte.grupo;
-      grupos.set(reporte.grupo, grupo);
-      selector.append(grupo);
-    }
+function cargarReportes(grupo) {
+  selector.replaceChildren();
+  for (const reporte of reportes.filter((elemento) => elemento.grupo === grupo)) {
     const opcion = document.createElement("option");
     opcion.value = reporte.ruta;
     opcion.textContent = reporte.nombre;
-    grupos.get(reporte.grupo).append(opcion);
+    selector.append(opcion);
+  }
+}
+
+function seleccionarCategoria(grupo) {
+  for (const boton of document.querySelectorAll("[data-report-category]")) {
+    boton.setAttribute("aria-pressed", String(boton.dataset.reportCategory === grupo));
+  }
+  cargarReportes(grupo);
+  void actualizarFiltros();
+}
+
+function nombreCampo(nombre) {
+  return etiquetasCampos[nombre] ?? nombre.replaceAll("_", " ").replace(/^./, (letra) => letra.toLocaleUpperCase("es"));
+}
+
+function formatValue(value) {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "number") return formatoNumero.format(value);
+  if (Array.isArray(value)) return value.join(", ");
+  if (typeof value === "boolean") return value ? "Sí" : "No";
+  return String(value);
+}
+
+function agregarResumen(data) {
+  const campos = ["total", "total_peliculas", "n", "desde", "hasta", "entidad_tipo", "criterio"];
+  const estadisticas = campos
+    .filter((campo) => data[campo] !== undefined && data[campo] !== null)
+    .map((campo) => [nombreCampo(campo), data[campo]]);
+  if (!estadisticas.length) return;
+
+  const lista = document.createElement("dl");
+  lista.className = "report-stats";
+  for (const [label, value] of estadisticas) {
+    const tarjeta = document.createElement("div");
+    tarjeta.className = "report-stat";
+    const termino = document.createElement("dt");
+    termino.textContent = label;
+    const descripcion = document.createElement("dd");
+    descripcion.textContent = formatValue(value);
+    tarjeta.append(termino, descripcion);
+    lista.append(tarjeta);
+  }
+  contenidoDatos.append(lista);
+}
+
+function crearSvgElemento(nombre, atributos = {}, texto = "") {
+  const elemento = document.createElementNS("http://www.w3.org/2000/svg", nombre);
+  for (const [clave, valor] of Object.entries(atributos)) elemento.setAttribute(clave, String(valor));
+  if (texto) elemento.textContent = texto;
+  return elemento;
+}
+
+function agregarLeyenda(contenedor, items) {
+  const leyenda = document.createElement("ul");
+  leyenda.className = "report-chart-legend";
+  for (const [indice, item] of items.entries()) {
+    const fila = document.createElement("li");
+    const muestra = document.createElement("span");
+    muestra.className = `chart-swatch chart-swatch-${indice % coloresGrafico.length}`;
+    muestra.setAttribute("aria-hidden", "true");
+    const texto = document.createElement("span");
+    texto.textContent = item;
+    fila.append(muestra, texto);
+    leyenda.append(fila);
+  }
+  contenedor.append(leyenda);
+}
+
+function mostrarSinDatos(contenedor) {
+  const texto = document.createElement("p");
+  texto.className = "report-table-note";
+  texto.textContent = "No hay datos disponibles para mostrar en este reporte.";
+  contenedor.append(texto);
+}
+
+function renderizarTorta(datos, contenedor) {
+  const serie = datos.series[0];
+  const elementos = datos.etiquetas.map((etiqueta, indice) => ({
+    etiqueta,
+    valor: Number(serie?.valores?.[indice] ?? 0),
+  })).filter((item) => Number.isFinite(item.valor) && item.valor > 0);
+  const total = elementos.reduce((acumulado, item) => acumulado + item.valor, 0);
+  if (!elementos.length || total <= 0) {
+    mostrarSinDatos(contenedor);
+    return;
+  }
+
+  const envoltura = document.createElement("div");
+  envoltura.className = "report-chart-wrap";
+  const svg = crearSvgElemento("svg", {
+    class: "report-chart",
+    viewBox: "0 0 320 260",
+    role: "img",
+    "aria-label": datos.titulo,
+  });
+  svg.append(crearSvgElemento("title", {}, datos.titulo));
+  const cx = 130;
+  const cy = 128;
+  const radio = 102;
+
+  if (elementos.length === 1) {
+    svg.append(crearSvgElemento("circle", {
+      cx, cy, r: radio, fill: coloresGrafico[0],
+    }));
+  } else {
+    let inicio = -Math.PI / 2;
+    for (const [indice, item] of elementos.entries()) {
+      const fin = inicio + (item.valor / total) * Math.PI * 2;
+      const puntoInicio = [cx + radio * Math.cos(inicio), cy + radio * Math.sin(inicio)];
+      const puntoFin = [cx + radio * Math.cos(fin), cy + radio * Math.sin(fin)];
+      const arcoGrande = fin - inicio > Math.PI ? 1 : 0;
+      const ruta = [
+        `M ${cx} ${cy}`,
+        `L ${puntoInicio[0]} ${puntoInicio[1]}`,
+        `A ${radio} ${radio} 0 ${arcoGrande} 1 ${puntoFin[0]} ${puntoFin[1]}`,
+        "Z",
+      ].join(" ");
+      svg.append(crearSvgElemento("path", {
+        d: ruta,
+        fill: coloresGrafico[indice % coloresGrafico.length],
+        stroke: "#fff",
+        "stroke-width": 1,
+      }));
+      inicio = fin;
+    }
+  }
+  envoltura.append(svg);
+  contenedor.append(envoltura);
+  agregarLeyenda(contenedor, elementos.map((item) =>
+    `${item.etiqueta}: ${formatValue(item.valor)} (${formatoNumero.format(item.valor / total * 100)}%)`));
+}
+
+function renderizarBarras(datos, contenedor) {
+  const series = datos.series.map((serie) => ({
+    nombre: serie.nombre,
+    valores: datos.etiquetas.map((_, indice) => Number(serie.valores[indice] ?? 0)),
+  }));
+  const maximo = Math.max(0, ...series.flatMap((serie) => serie.valores.filter(Number.isFinite)));
+  if (!datos.etiquetas.length || !series.length || maximo <= 0) {
+    mostrarSinDatos(contenedor);
+    return;
+  }
+
+  const ancho = 920;
+  const margenIzquierdo = 230;
+  const margenDerecho = 54;
+  const altoFila = Math.max(34, series.length * 17 + 10);
+  const alto = Math.max(150, 44 + datos.etiquetas.length * altoFila);
+  const anchoBarras = ancho - margenIzquierdo - margenDerecho;
+  const altoBarra = Math.max(7, Math.min(15, (altoFila - 8) / series.length));
+  const envoltura = document.createElement("div");
+  envoltura.className = "report-chart-wrap";
+  const svg = crearSvgElemento("svg", {
+    class: "report-chart report-chart-bars",
+    viewBox: `0 0 ${ancho} ${alto}`,
+    role: "img",
+    "aria-label": datos.titulo,
+  });
+  svg.append(crearSvgElemento("title", {}, datos.titulo));
+
+  for (let tick = 0; tick <= 4; tick += 1) {
+    const x = margenIzquierdo + (anchoBarras * tick) / 4;
+    svg.append(crearSvgElemento("line", {
+      x1: x, y1: 28, x2: x, y2: alto - 8, stroke: "#e1e8ec", "stroke-width": 1,
+    }));
+    svg.append(crearSvgElemento("text", {
+      x, y: 20, fill: "#627582", "font-size": 11, "text-anchor": "middle",
+    }, formatValue((maximo * tick) / 4)));
+  }
+
+  datos.etiquetas.forEach((etiqueta, indiceEtiqueta) => {
+    const inicioFila = 36 + indiceEtiqueta * altoFila;
+    const grupo = datos.grupos?.[indiceEtiqueta];
+    const rotulo = grupo ? `${etiqueta} · ${grupo}` : etiqueta;
+    const texto = rotulo.length > 32 ? `${rotulo.slice(0, 29)}…` : rotulo;
+    const textoSvg = crearSvgElemento("text", {
+      x: margenIzquierdo - 12,
+      y: inicioFila + altoFila / 2 + 4,
+      fill: "#334d5f",
+      "font-size": 11,
+      "text-anchor": "end",
+    }, texto);
+    textoSvg.append(crearSvgElemento("title", {}, rotulo));
+    svg.append(textoSvg);
+
+    series.forEach((serie, indiceSerie) => {
+      const valor = serie.valores[indiceEtiqueta];
+      if (!Number.isFinite(valor) || valor <= 0) return;
+      const y = inicioFila + indiceSerie * (altoBarra + 3);
+      const barraAncho = (valor / maximo) * anchoBarras;
+      svg.append(crearSvgElemento("rect", {
+        x: margenIzquierdo,
+        y,
+        width: barraAncho,
+        height: altoBarra,
+        rx: 3,
+        fill: coloresGrafico[indiceSerie % coloresGrafico.length],
+      }));
+      svg.append(crearSvgElemento("text", {
+        x: Math.min(ancho - 6, margenIzquierdo + barraAncho + 5),
+        y: y + altoBarra - 1,
+        fill: "#334d5f",
+        "font-size": 10,
+      }, formatValue(valor)));
+    });
+  });
+
+  envoltura.append(svg);
+  contenedor.append(envoltura);
+  if (series.length > 1) agregarLeyenda(contenedor, series.map((serie) => serie.nombre));
+}
+
+function construirFilas(data) {
+  switch (selector.value) {
+    case "/nomina/empleados/pdf":
+      return data.empleados.map(({ codigo, nombre }) => ({ codigo, nombre }));
+    case "/nomina/por-dependencia/pdf":
+      return data.dependencias.map(({ dependencia, cantidad }) => ({ dependencia, cantidad }));
+    case "/nomina/por-cargo/pdf":
+      return data.dependencias.flatMap((item) =>
+        item.cargos.map(({ cargo, cantidad }) => ({ dependencia: item.dependencia, cargo, cantidad })));
+    case "/personal/pdf":
+      return data.empleados.map((item) => ({
+        codigo: item.codigo,
+        nombre: item.nombre,
+        dependencia: item.dependencia,
+        cargo: item.cargo,
+        fecha_ingreso: item.fecha_ingreso,
+        eps: item.eps,
+        fondo_pension: item.fondo_pension,
+        aporte_pension: item.aporte_pension,
+        sueldo: item.sueldo,
+        novedades: item.novedades.length,
+      }));
+    case "/salud-pension/por-cargo-eps/pdf":
+    case "/salud-pension/por-cargo-pension/pdf":
+      return data.cargos.flatMap((item) =>
+        item.entidades.map(({ entidad, cantidad }) => ({ cargo: item.cargo, entidad, cantidad })));
+    case "/novedades/empleados/pdf":
+      return data.empleados.map((item) => ({
+        codigo: item.codigo,
+        nombre: item.nombre,
+        dependencia: item.dependencia,
+        cargo: item.cargo,
+        novedades: item.novedades.length,
+      }));
+    case "/novedades/resumen/pdf":
+      return data.dependencias.flatMap((item) =>
+        item.cargos.map(({ cargo, cantidad }) => ({ dependencia: item.dependencia, cargo, cantidad })));
+    case "/entretenimiento/peliculas-por-genero/pdf":
+      return data.generos.map(({ genero, cantidad }) => ({ genero, cantidad }));
+    case "/entretenimiento/libros/top/pdf":
+      return data.libros.map((item) => ({
+        posicion: item.posicion,
+        titulo: item.titulo,
+        calificacion: item.calificacion,
+        num_calificaciones: item.num_calificaciones,
+        anio: item.anio,
+      }));
+    case "/entretenimiento/libros/top-por-anio/pdf":
+      return data.anios.flatMap((item) => [
+        ...item.mejores.map((libro) => ({ anio: item.anio, criterio: "Mejores", ...libro })),
+        ...item.peores.map((libro) => ({ anio: item.anio, criterio: "Peores", ...libro })),
+      ]);
+    case "/entretenimiento/peliculas/por-numero-de-generos/pdf":
+      return data.peliculas.map((item) => ({
+        id_pelicula: item.id_pelicula,
+        titulo: item.titulo,
+        anio: item.anio,
+        generos: item.generos,
+      }));
+    default:
+      return [];
+  }
+}
+
+function renderizarTabla(data, contenedor) {
+  const filas = construirFilas(data);
+  if (!filas.length) {
+    mostrarSinDatos(contenedor);
+    return;
+  }
+
+  const maxFilas = 100;
+  const visibles = filas.slice(0, maxFilas);
+  const columnas = [...new Set(visibles.flatMap((fila) => Object.keys(fila)))];
+  const envoltura = document.createElement("div");
+  envoltura.className = "report-table-wrap";
+  const tabla = document.createElement("table");
+  tabla.className = "report-data-table";
+  const encabezado = document.createElement("thead");
+  const filaEncabezado = document.createElement("tr");
+  for (const columna of columnas) {
+    const celda = document.createElement("th");
+    celda.scope = "col";
+    celda.textContent = nombreCampo(columna);
+    filaEncabezado.append(celda);
+  }
+  encabezado.append(filaEncabezado);
+  tabla.append(encabezado);
+  const cuerpo = document.createElement("tbody");
+  for (const fila of visibles) {
+    const filaTabla = document.createElement("tr");
+    for (const columna of columnas) {
+      const celda = document.createElement("td");
+      celda.textContent = formatValue(fila[columna]);
+      filaTabla.append(celda);
+    }
+    cuerpo.append(filaTabla);
+  }
+  tabla.append(cuerpo);
+  envoltura.append(tabla);
+  contenedor.append(envoltura);
+  if (filas.length > maxFilas) {
+    const nota = document.createElement("p");
+    nota.className = "report-table-note";
+    nota.textContent = `Se muestran ${maxFilas} de ${formatValue(filas.length)} filas. Usa la vista previa o descarga el PDF para consultar el reporte completo.`;
+    contenedor.append(nota);
+  }
+}
+
+function renderizarDatos(data) {
+  contenidoDatos.replaceChildren();
+  tituloDatos.textContent = data.titulo || selector.selectedOptions[0].textContent;
+  resumenDatos.textContent = Array.isArray(data.etiquetas)
+    ? `${formatValue(data.etiquetas.length)} categorías`
+    : `${formatValue(data.total ?? data.total_peliculas ?? construirFilas(data).length)} registros`;
+  agregarResumen(data);
+
+  if (Array.isArray(data.etiquetas) && Array.isArray(data.series)) {
+    if (data.tipo === "torta") renderizarTorta(data, contenidoDatos);
+    else if (data.tipo === "barras") renderizarBarras(data, contenidoDatos);
+    else renderizarTabla(data, contenidoDatos);
+    if (data.nota) {
+      const nota = document.createElement("p");
+      nota.className = "report-chart-note";
+      nota.textContent = data.nota;
+      contenidoDatos.append(nota);
+    }
+  } else {
+    renderizarTabla(data, contenidoDatos);
+  }
+  panelDatos.hidden = false;
+}
+
+function invalidarDatos() {
+  solicitudDatos?.abort();
+  solicitudDatos = null;
+  botonDatos.disabled = false;
+  panelDatos.hidden = true;
+  resumenDatos.textContent = "";
+  mensajeDatos.textContent = "";
+  contenidoDatos.replaceChildren();
+}
+
+function errorDeRespuesta(cuerpo, status) {
+  const predeterminado = cuerpo || `Error HTTP ${status}`;
+  try {
+    const detalle = JSON.parse(cuerpo).detail;
+    if (typeof detalle === "string") return detalle;
+    if (Array.isArray(detalle)) {
+      return detalle.map((item) => item.msg || String(item)).join("; ");
+    }
+  } catch {
+    return predeterminado;
+  }
+  return predeterminado;
+}
+
+async function consultarDatos() {
+  if (!form.reportValidity()) return;
+  solicitudDatos?.abort();
+  const controlador = new AbortController();
+  solicitudDatos = controlador;
+  botonDatos.disabled = true;
+  panelDatos.hidden = false;
+  tituloDatos.textContent = selector.selectedOptions[0].textContent;
+  resumenDatos.textContent = "";
+  contenidoDatos.replaceChildren();
+  mensajeDatos.textContent = "Consultando los datos del reporte…";
+  try {
+    const ruta = selector.value.replace(/\/pdf$/, "");
+    const url = new URL(`/api/v1/reportes${ruta}`, window.location.origin);
+    for (const [clave, valor] of new FormData(form)) {
+      if (clave !== "reporte" && String(valor).trim()) url.searchParams.set(clave, String(valor).trim());
+    }
+    const respuesta = await fetch(url, { signal: controlador.signal, credentials: "same-origin" });
+    if (respuesta.status === 401) {
+      window.location.replace("/login.html");
+      return;
+    }
+    if (!respuesta.ok) throw new Error(errorDeRespuesta(await respuesta.text(), respuesta.status));
+    const data = await respuesta.json();
+    if (solicitudDatos !== controlador) return;
+    renderizarDatos(data);
+    mensajeDatos.textContent = "";
+  } catch (error) {
+    if (error.name === "AbortError") return;
+    contenidoDatos.replaceChildren();
+    mensajeDatos.textContent = error.message || "No se pudieron consultar los datos.";
+  } finally {
+    if (solicitudDatos === controlador) {
+      solicitudDatos = null;
+      botonDatos.disabled = false;
+    }
   }
 }
 
@@ -215,6 +657,13 @@ function crearControl(campo) {
 async function actualizarFiltros() {
   versionVistaPrevia += 1;
   solicitudVistaPrevia?.abort();
+  solicitudDatos?.abort();
+  solicitudDatos = null;
+  botonVistaPrevia.disabled = false;
+  botonDatos.disabled = false;
+  panelDatos.hidden = true;
+  mensajeDatos.textContent = "";
+  contenidoDatos.replaceChildren();
   await liberarDocumento();
   filtros.replaceChildren();
   const reporte = reportes.find((elemento) => elemento.ruta === selector.value);
@@ -325,12 +774,12 @@ async function generarVistaPrevia() {
     tareaCargaPdf = tarea;
     const documento = await tarea.promise;
     if (version !== versionVistaPrevia) {
-      await documento.destroy();
+      await tarea.destroy();
+      if (tareaCargaPdf === tarea) tareaCargaPdf = null;
       return;
     }
 
     pdfDocumento = documento;
-    tareaCargaPdf = null;
     paginaActual = 1;
     zoom = 1;
     vistaPrevia.hidden = false;
@@ -378,9 +827,17 @@ form.addEventListener("submit", (evento) => {
   void generarVistaPrevia();
 });
 
+botonDatos.addEventListener("click", () => void consultarDatos());
+for (const boton of document.querySelectorAll("[data-report-category]")) {
+  boton.addEventListener("click", () => seleccionarCategoria(boton.dataset.reportCategory));
+}
+
 selector.addEventListener("change", () => {
   void actualizarFiltros();
 });
+
+filtros.addEventListener("input", invalidarDatos);
+filtros.addEventListener("change", invalidarDatos);
 
 botonAnterior.addEventListener("click", () => void cambiarPagina(-1));
 botonSiguiente.addEventListener("click", () => void cambiarPagina(1));
@@ -431,5 +888,5 @@ botonDescarga.addEventListener("click", async () => {
   }
 });
 
-cargarReportes();
+cargarReportes("Nómina");
 void actualizarFiltros();

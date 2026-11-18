@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#183b56">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Entrecol | Centro de reportes</title>
-  <link rel="stylesheet" href="/css/reportes.css?v=8">
+  <link rel="stylesheet" href="/css/reportes.css?v=10">
   <script src="/js/pages/auth.js?v=3" defer></script>
-  <script src="/js/pages/reportes.js?v=6" defer></script>
+  <script src="/js/pages/reportes.js?v=9" defer></script>
 </head>
 <body data-page="reports">
   <header class="site-header">
@@ -102,9 +102,26 @@
             <div>
               <p class="eyebrow">Centro de reportes</p>
               <h2 id="intro-title">Consultas</h2>
-              <p>Elige un reporte, ajusta sus filtros y revisa o descarga el PDF.</p>
+              <p>Explora las cinco áreas, consulta sus datos y prepara la vista previa del PDF.</p>
             </div>
             <span class="format-badge">PDF · Vista previa</span>
+          </div>
+          <div class="report-categories" role="group" aria-label="Categorías de reportes">
+            <button class="report-category" type="button" data-report-category="Nómina" aria-pressed="true" aria-controls="report-select">
+              <span class="report-category-number">01</span><span>Nómina</span>
+            </button>
+            <button class="report-category" type="button" data-report-category="Información personal" aria-pressed="false" aria-controls="report-select">
+              <span class="report-category-number">02</span><span>Información personal</span>
+            </button>
+            <button class="report-category" type="button" data-report-category="Salud y pensión" aria-pressed="false" aria-controls="report-select">
+              <span class="report-category-number">03</span><span>Salud y pensión</span>
+            </button>
+            <button class="report-category" type="button" data-report-category="Novedades" aria-pressed="false" aria-controls="report-select">
+              <span class="report-category-number">04</span><span>Novedades</span>
+            </button>
+            <button class="report-category" type="button" data-report-category="Entretenimiento" aria-pressed="false" aria-controls="report-select">
+              <span class="report-category-number">05</span><span>Entretenimiento</span>
+            </button>
           </div>
           <section class="workspace" aria-label="Generador de reportes">
             <form id="report-form" class="controls">
@@ -114,44 +131,59 @@
               </div>
               <div id="report-filters" class="filters" aria-live="polite"></div>
               <div class="actions">
-                <button class="button button-primary" type="submit">Ver vista previa</button>
+                <button id="report-data-button" class="button button-secondary" type="button">Consultar datos</button>
+                <button class="button button-primary" type="submit">Vista previa del PDF</button>
                 <button class="button button-secondary" id="download-button" type="button">Descargar PDF</button>
               </div>
               <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
             </form>
 
-            <section class="preview-panel" aria-labelledby="preview-title">
-              <div class="preview-heading">
-                <div>
-                  <p class="eyebrow">Documento</p>
-                  <h3 id="preview-title">Vista previa del reporte</h3>
+            <div class="report-output">
+              <section id="report-data-panel" class="report-data-panel" aria-labelledby="report-data-title" hidden>
+                <div class="preview-heading">
+                  <div>
+                    <p class="eyebrow">Datos de la API</p>
+                    <h3 id="report-data-title">Resultado del reporte</h3>
+                  </div>
+                  <span id="report-data-summary" class="preview-hint"></span>
                 </div>
-                <span class="preview-hint">El PDF se abre en el navegador</span>
-              </div>
-              <div class="preview-frame">
-                <div id="preview-empty" class="preview-empty">
-                  <span class="document-icon" aria-hidden="true">PDF</span>
-                  <p>Elige un reporte y selecciona <strong>Ver vista previa</strong>.</p>
+                <p id="report-data-message" class="form-message" role="status" aria-live="polite"></p>
+                <div id="report-data-content"></div>
+              </section>
+
+              <section class="preview-panel" aria-labelledby="preview-title">
+                <div class="preview-heading">
+                  <div>
+                    <p class="eyebrow">Documento</p>
+                    <h3 id="preview-title">Vista previa del reporte</h3>
+                  </div>
+                  <span class="preview-hint">El PDF se abre en el navegador</span>
                 </div>
-                <div id="pdf-preview" class="pdf-viewer" hidden>
-                  <div class="pdf-toolbar" aria-label="Controles de vista previa">
-                    <div class="page-controls">
-                      <button class="viewer-button" id="previous-page" type="button" aria-label="Página anterior">Anterior</button>
-                      <span id="page-indicator" role="status" aria-live="polite">Página 0 de 0</span>
-                      <button class="viewer-button" id="next-page" type="button" aria-label="Página siguiente">Siguiente</button>
+                <div class="preview-frame">
+                  <div id="preview-empty" class="preview-empty">
+                    <span class="document-icon" aria-hidden="true">PDF</span>
+                    <p>Selecciona <strong>Vista previa del PDF</strong> para abrir el documento.</p>
+                  </div>
+                  <div id="pdf-preview" class="pdf-viewer" hidden>
+                    <div class="pdf-toolbar" aria-label="Controles de vista previa">
+                      <div class="page-controls">
+                        <button class="viewer-button" id="previous-page" type="button" aria-label="Página anterior">Anterior</button>
+                        <span id="page-indicator" role="status" aria-live="polite">Página 0 de 0</span>
+                        <button class="viewer-button" id="next-page" type="button" aria-label="Página siguiente">Siguiente</button>
+                      </div>
+                      <div class="zoom-controls">
+                        <button class="viewer-button zoom-button" id="zoom-out" type="button" aria-label="Reducir zoom">−</button>
+                        <span id="zoom-indicator" role="status">100%</span>
+                        <button class="viewer-button zoom-button" id="zoom-in" type="button" aria-label="Aumentar zoom">+</button>
+                      </div>
                     </div>
-                    <div class="zoom-controls">
-                      <button class="viewer-button zoom-button" id="zoom-out" type="button" aria-label="Reducir zoom">−</button>
-                      <span id="zoom-indicator" role="status">100%</span>
-                      <button class="viewer-button zoom-button" id="zoom-in" type="button" aria-label="Aumentar zoom">+</button>
+                    <div class="pdf-page-wrap">
+                      <canvas id="pdf-canvas" aria-label="Página del reporte PDF"></canvas>
                     </div>
                   </div>
-                  <div class="pdf-page-wrap">
-                    <canvas id="pdf-canvas" aria-label="Página del reporte PDF"></canvas>
-                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            </div>
           </section>
         </section>
 
