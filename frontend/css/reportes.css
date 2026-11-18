@@ -69,6 +69,11 @@ body {
   font-size: 12px;
 }
 
+#session-message {
+  color: #ffd5d5;
+  font-size: 11px;
+}
+
 .session-controls .viewer-button {
   border-color: rgb(255 255 255 / 35%);
   color: white;
@@ -92,6 +97,184 @@ main {
   width: min(1320px, calc(100% - 40px));
   margin: 34px auto;
   flex: 1;
+}
+
+.dashboard-main {
+  width: min(1480px, calc(100% - 48px));
+}
+
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: start;
+  gap: 26px;
+}
+
+.dashboard-nav {
+  position: sticky;
+  top: 20px;
+  display: grid;
+  gap: 7px;
+  padding: 18px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 8px 24px rgb(24 59 86 / 5%);
+}
+
+.nav-label {
+  margin: 0 8px 8px;
+  color: #82939d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #4b626f;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.nav-link:hover {
+  background: #f3f7f9;
+}
+
+.nav-link[aria-current="page"] {
+  border-color: #d7e7ef;
+  color: var(--navy);
+  background: #eaf3f8;
+}
+
+.nav-number {
+  color: #82939d;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.nav-link[aria-current="page"] .nav-number {
+  color: var(--blue);
+}
+
+.nav-note,
+.audit-meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.nav-note {
+  margin: 14px 7px 0;
+  padding-top: 15px;
+  border-top: 1px solid #e8eef1;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #38a279;
+  box-shadow: 0 0 0 3px #e4f4ed;
+}
+
+.dashboard-content,
+.dashboard-section {
+  min-width: 0;
+}
+
+.dashboard-section {
+  animation: section-appear 160ms ease-out;
+}
+
+@keyframes section-appear {
+  from { opacity: 0.65; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.section-heading {
+  margin: 0 0 20px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  color: var(--navy);
+  font-size: clamp(24px, 3vw, 32px);
+  letter-spacing: -0.025em;
+}
+
+.section-heading > p:not(.eyebrow),
+.section-heading > div > p:not(.eyebrow) {
+  margin: 7px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.section-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.security-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.security-card {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: linear-gradient(135deg, #fff, #f8fbfc);
+}
+
+.security-card-label,
+.panel-kicker {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.security-card strong {
+  color: var(--navy);
+  font-size: 14px;
+}
+
+.security-card p,
+.account-panel-heading p,
+.account-recovery p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.preview-heading h3,
+.account-panel-heading h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 18px;
 }
 
 .intro {
@@ -379,11 +562,15 @@ footer {
 
 .account-panel {
   display: grid;
-  grid-template-columns: minmax(190px, 0.6fr) minmax(0, 1.4fr);
+  grid-template-columns: minmax(190px, 0.7fr) minmax(0, 1.3fr);
   align-items: start;
   gap: 20px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
   padding: 20px;
+}
+
+.account-panel-heading {
+  padding: 4px 8px 0 2px;
 }
 
 .account-panel h2,
@@ -423,10 +610,28 @@ footer {
 .account-recovery {
   display: grid;
   grid-column: 1 / -1;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.55fr) auto;
+  align-items: end;
+  gap: 10px 14px;
   margin-top: 8px;
   padding-top: 14px;
   border-top: 1px solid var(--border);
+}
+
+.account-recovery > div {
+  grid-row: span 2;
+  align-self: center;
+}
+
+.account-recovery h4 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 13px;
+}
+
+.account-recovery .button,
+.account-recovery pre {
+  grid-column: 2 / -1;
 }
 
 .account-recovery pre {
@@ -442,8 +647,19 @@ footer {
 .admin-panel {
   display: grid;
   gap: 18px;
-  margin-top: 24px;
+  margin-top: 0;
   padding: 22px;
+}
+
+.create-user-form {
+  padding: 18px;
+  border: 1px solid #e2e9ed;
+  border-radius: 10px;
+  background: #f8fafb;
+}
+
+.create-user-form .table-caption {
+  grid-column: 1 / -1;
 }
 
 .admin-heading {
@@ -468,6 +684,14 @@ footer {
   margin: 0;
   color: var(--muted);
   font-size: 12px;
+}
+
+.audit-meta {
+  width: fit-content;
+  padding: 9px 12px;
+  border: 1px solid #dfece5;
+  border-radius: 999px;
+  background: #f6fbf8;
 }
 
 .table-wrap {
@@ -614,6 +838,30 @@ td select {
     margin: 24px auto;
   }
 
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .dashboard-nav {
+    position: static;
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    padding: 8px;
+  }
+
+  .nav-label,
+  .nav-note {
+    display: none;
+  }
+
+  .nav-link {
+    flex: 0 0 auto;
+    gap: 8px;
+    min-height: 40px;
+  }
+
   .workspace {
     grid-template-columns: 1fr;
   }
@@ -634,6 +882,44 @@ td select {
 }
 
 @media (max-width: 520px) {
+  .dashboard-main {
+    width: calc(100% - 24px);
+    margin: 16px auto;
+  }
+
+  .nav-link {
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  .nav-number {
+    display: none;
+  }
+
+  .section-heading-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .security-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .account-panel {
+    padding: 16px;
+  }
+
+  .account-recovery {
+    grid-template-columns: 1fr;
+  }
+
+  .account-recovery > div,
+  .account-recovery .button,
+  .account-recovery pre {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
   .intro {
     align-items: flex-start;
     flex-direction: column;

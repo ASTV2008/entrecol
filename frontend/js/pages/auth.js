@@ -145,17 +145,10 @@ function createCell(row, value) {
   return cell;
 }
 
-async function refreshAdmin() {
-  const [users, events, retention] = await Promise.all([
-    requestJson("/api/v1/auth/admin/users"),
-    requestJson("/api/v1/auth/admin/audit?limit=100"),
-    requestJson("/api/v1/auth/admin/audit/retention"),
-  ]);
+async function refreshUsers() {
+  const users = await requestJson("/api/v1/auth/admin/users");
   const userRows = document.querySelector("#user-rows");
-  const auditRows = document.querySelector("#audit-rows");
-  const usersById = new Map(users.map((user) => [user.id, user.email]));
   userRows.replaceChildren();
-  auditRows.replaceChildren();
 
   for (const user of users) {
     const row = document.createElement("tr");
@@ -184,7 +177,7 @@ async function refreshAdmin() {
           method: "PATCH",
           body: JSON.stringify({ role: roleSelect.value }),
         });
-        await refreshAdmin();
+        await refreshUsers();
       } catch (error) {
         showAdminMessage(error.message);
       }
@@ -199,7 +192,7 @@ async function refreshAdmin() {
           method: "PATCH",
           body: JSON.stringify({ is_active: !user.is_active }),
         });
-        await refreshAdmin();
+        await refreshUsers();
       } catch (error) {
         showAdminMessage(error.message);
       }
@@ -217,7 +210,7 @@ async function refreshAdmin() {
           `Contraseña temporal de ${result.user.email}: ${result.temporary_password}. ` +
           "Cópiala ahora; no volverá a mostrarse.",
         );
-        await refreshAdmin();
+        await refreshUsers();
       } catch (error) {
         showAdminMessage(error.message);
       }
@@ -231,7 +224,7 @@ async function refreshAdmin() {
       try {
         await requestJson(`/api/v1/auth/admin/users/${user.id}/reset-totp`, { method: "POST" });
         showAdminMessage(`Se restableció MFA para ${user.email}; deberá enrolar un nuevo autenticador.`);
-        await refreshAdmin();
+        await refreshUsers();
       } catch (error) {
         showAdminMessage(error.message);
       }
@@ -240,13 +233,24 @@ async function refreshAdmin() {
     row.append(actions);
     userRows.append(row);
   }
+}
+
+async function refreshAudit() {
+  const [users, events, retention] = await Promise.all([
+    requestJson("/api/v1/auth/admin/users"),
+    requestJson("/api/v1/auth/admin/audit?limit=100"),
+    requestJson("/api/v1/auth/admin/audit/retention"),
+  ]);
+  const userDirectory = new Map(users.map((user) => [user.id, user.email]));
+  const auditRows = document.querySelector("#audit-rows");
+  auditRows.replaceChildren();
 
   for (const event of events) {
     const row = document.createElement("tr");
     createCell(row, String(event.created_at).replace("T", " "));
     createCell(row, event.event_type);
-    createCell(row, usersById.get(event.actor_user_id) || (event.actor_user_id ? `ID ${event.actor_user_id}` : "Sistema"));
-    createCell(row, usersById.get(event.target_user_id) || (event.target_user_id ? `ID ${event.target_user_id}` : "—"));
+    createCell(row, userDirectory.get(event.actor_user_id) || (event.actor_user_id ? `ID ${event.actor_user_id}` : "Sistema"));
+    createCell(row, userDirectory.get(event.target_user_id) || (event.target_user_id ? `ID ${event.target_user_id}` : "—"));
     createCell(row, event.resource);
     createCell(row, event.success ? "Correcto" : "Fallido");
     auditRows.append(row);
@@ -257,6 +261,10 @@ async function refreshAdmin() {
 
 function showAdminMessage(message = "") {
   document.querySelector("#create-user-message").textContent = message;
+}
+
+function showAuditMessage(message = "") {
+  document.querySelector("#audit-message").textContent = message;
 }
 
 async function handleCreateUser(event) {
@@ -272,7 +280,7 @@ async function handleCreateUser(event) {
       "Cópiala ahora; no volverá a mostrarse.",
     );
     event.currentTarget.reset();
-    await refreshAdmin();
+    await refreshUsers();
   } catch (error) {
     showAdminMessage(error.message);
   }
@@ -286,9 +294,30 @@ function activateReports(session) {
   document.querySelector("#session-controls").hidden = false;
   document.querySelector("#session-identity").textContent =
     `${currentUser.email} · ${roleName(currentUser.role)}`;
-  document.querySelector("#admin-panel").hidden = currentUser.role !== "admin";
-  if (currentUser.role === "admin") {
-    void refreshAdmin().catch((error) => showAdminMessage(error.message));
+  const isAdmin = currentUser.role === "admin";
+  document.querySelector("#nav-admin").hidden = !isAdmin;
+  document.querySelector("#nav-audit").hidden = !isAdmin;
+  document.querySelector("#section-admin").hidden = !isAdmin;
+  document.querySelector("#section-audit").hidden = !isAdmin;
+  activateSection("reports");
+}
+
+function activateSection(name) {
+  if ((name === "admin" || name === "audit") && currentUser?.role !== "admin") return;
+  for (const section of document.querySelectorAll(".dashboard-section")) {
+    section.hidden = section.id !== `section-${name}`;
+  }
+  for (const link of document.querySelectorAll("[data-section-target]")) {
+    if (link.dataset.sectionTarget === name) {
+      link.setAttribute("aria-current", "page");
+    } else {
+      link.removeAttribute("aria-current");
+    }
+  }
+  if (name === "admin") {
+    void refreshUsers().catch((error) => showAdminMessage(error.message));
+  } else if (name === "audit") {
+    void refreshAudit().catch((error) => showAuditMessage(error.message));
   }
 }
 
@@ -297,7 +326,9 @@ async function handleLogout() {
     await requestJson("/api/v1/auth/logout", { method: "POST" });
     window.location.replace("/login.html");
   } catch (error) {
-    showAdminMessage(error.message);
+    const message = document.querySelector("#session-message");
+    message.textContent = error.message;
+    message.hidden = false;
   }
 }
 
@@ -318,8 +349,14 @@ function initializeLoginPage() {
 function initializeReportsPage() {
   document.querySelector("#logout-button").addEventListener("click", handleLogout);
   document.querySelector("#refresh-admin").addEventListener("click", () => {
-    void refreshAdmin().catch((error) => showAdminMessage(error.message));
+    void refreshUsers().catch((error) => showAdminMessage(error.message));
   });
+  document.querySelector("#refresh-audit").addEventListener("click", () => {
+    void refreshAudit().catch((error) => showAuditMessage(error.message));
+  });
+  for (const link of document.querySelectorAll("[data-section-target]")) {
+    link.addEventListener("click", () => activateSection(link.dataset.sectionTarget));
+  }
   document.querySelector("#create-user-form").addEventListener("submit", handleCreateUser);
   document.querySelector("#account-password-form").addEventListener("submit", async (event) => {
     event.preventDefault();

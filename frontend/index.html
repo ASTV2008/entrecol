@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#183b56">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Entrecol | Reportes PDF</title>
-  <link rel="stylesheet" href="/css/reportes.css?v=6">
-  <script src="/js/pages/auth.js?v=1" defer></script>
+  <link rel="stylesheet" href="/css/reportes.css?v=7">
+  <script src="/js/pages/auth.js?v=2" defer></script>
   <script src="/js/pages/reportes.js?v=6" defer></script>
 </head>
 <body data-page="reports">
@@ -20,129 +20,195 @@
     <div id="session-controls" class="session-controls" hidden>
       <span id="session-identity"></span>
       <button id="logout-button" class="viewer-button" type="button">Cerrar sesión</button>
+      <span id="session-message" role="status" aria-live="polite" hidden></span>
     </div>
   </header>
 
-  <main id="reports-main" hidden>
-    <section class="account-panel" aria-labelledby="account-title">
-      <div>
-        <p class="eyebrow">Seguridad</p>
-        <h2 id="account-title">Cambiar contraseña</h2>
-      </div>
-      <form id="account-password-form" class="inline-form">
-        <label for="current-password">Contraseña actual</label>
-        <input id="current-password" name="current_password" type="password" autocomplete="current-password" required>
-        <label for="new-password">Nueva contraseña</label>
-        <input id="new-password" name="new_password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
-        <label for="confirm-password">Confirmar contraseña</label>
-        <input id="confirm-password" name="confirm_password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
-        <button class="button button-secondary" type="submit">Actualizar contraseña</button>
-        <p id="account-message" class="form-message" role="status" aria-live="polite"></p>
-        <div class="account-recovery">
-          <label for="recovery-totp-code">Código TOTP para renovar códigos de recuperación</label>
-          <input id="recovery-totp-code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code">
-          <button id="rotate-recovery-codes" class="button button-secondary" type="button">Renovar códigos</button>
-          <pre id="recovery-codes-display" hidden></pre>
+  <main id="reports-main" class="dashboard-main" hidden>
+    <div class="dashboard-shell">
+      <nav class="dashboard-nav" aria-label="Secciones de Entrecol">
+        <p class="nav-label">ESPACIO DE TRABAJO</p>
+        <button class="nav-link" type="button" data-section-target="security">
+          <span class="nav-number">01</span><span>Seguridad</span>
+        </button>
+        <button class="nav-link" type="button" data-section-target="reports" aria-current="page">
+          <span class="nav-number">02</span><span>Consultas</span>
+        </button>
+        <button id="nav-admin" class="nav-link" type="button" data-section-target="admin" hidden>
+          <span class="nav-number">03</span><span>Administración</span>
+        </button>
+        <button id="nav-audit" class="nav-link" type="button" data-section-target="audit" hidden>
+          <span class="nav-number">04</span><span>Auditoría</span>
+        </button>
+        <div class="nav-note">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>Sesión protegida con MFA</span>
         </div>
-      </form>
-    </section>
+      </nav>
 
-    <section class="intro" aria-labelledby="intro-title">
-      <div>
-        <p class="eyebrow">Etapa 9</p>
-        <h2 id="intro-title">Consulta, vista previa y descarga</h2>
-        <p>Selecciona un reporte y sus filtros. Puedes revisarlo aquí mismo o descargar el PDF.</p>
-      </div>
-      <span class="format-badge">PDF · Vista previa</span>
-    </section>
-
-    <section class="workspace" aria-label="Generador de reportes">
-      <form id="report-form" class="controls">
-        <div class="field">
-          <label for="report-select">Reporte</label>
-          <select id="report-select" name="reporte" required></select>
-        </div>
-        <div id="report-filters" class="filters" aria-live="polite"></div>
-        <div class="actions">
-          <button class="button button-primary" type="submit">Ver vista previa</button>
-          <button class="button button-secondary" id="download-button" type="button">Descargar PDF</button>
-        </div>
-        <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
-      </form>
-
-      <section class="preview-panel" aria-labelledby="preview-title">
-        <div class="preview-heading">
-          <div>
-            <p class="eyebrow">Documento</p>
-            <h2 id="preview-title">Vista previa del reporte</h2>
+      <div class="dashboard-content">
+        <section id="section-security" class="dashboard-section" hidden aria-labelledby="security-title">
+          <div class="section-heading">
+            <p class="eyebrow">Cuenta y acceso</p>
+            <h2 id="security-title">Seguridad</h2>
+            <p>Administra tu contraseña y los métodos para recuperar el acceso.</p>
           </div>
-          <span class="preview-hint">El PDF se abre en el navegador</span>
-        </div>
-        <div class="preview-frame">
-          <div id="preview-empty" class="preview-empty">
-            <span class="document-icon" aria-hidden="true">PDF</span>
-            <p>Elige un reporte y selecciona <strong>Ver vista previa</strong>.</p>
+          <div class="security-summary">
+            <article class="security-card">
+              <span class="security-card-label">Autenticación</span>
+              <strong>Verificación en dos pasos</strong>
+              <p>El acceso a los reportes requiere un código TOTP además de tu contraseña.</p>
+            </article>
+            <article class="security-card">
+              <span class="security-card-label">Recuperación</span>
+              <strong>Códigos de un solo uso</strong>
+              <p>Renueva los códigos con tu autenticador y consérvalos en un lugar privado.</p>
+            </article>
           </div>
-          <div id="pdf-preview" class="pdf-viewer" hidden>
-            <div class="pdf-toolbar" aria-label="Controles de vista previa">
-              <div class="page-controls">
-                <button class="viewer-button" id="previous-page" type="button" aria-label="Página anterior">Anterior</button>
-                <span id="page-indicator" role="status" aria-live="polite">Página 0 de 0</span>
-                <button class="viewer-button" id="next-page" type="button" aria-label="Página siguiente">Siguiente</button>
-              </div>
-              <div class="zoom-controls">
-                <button class="viewer-button zoom-button" id="zoom-out" type="button" aria-label="Reducir zoom">−</button>
-                <span id="zoom-indicator" role="status">100%</span>
-                <button class="viewer-button zoom-button" id="zoom-in" type="button" aria-label="Aumentar zoom">+</button>
-              </div>
+          <section class="account-panel" aria-labelledby="account-title">
+            <div class="account-panel-heading">
+              <span class="panel-kicker">Preferencias de cuenta</span>
+              <h3 id="account-title">Contraseña y recuperación</h3>
+              <p>Usa una contraseña única de al menos 12 caracteres.</p>
             </div>
-            <div class="pdf-page-wrap">
-              <canvas id="pdf-canvas" aria-label="Página del reporte PDF"></canvas>
+            <form id="account-password-form" class="inline-form">
+              <label for="current-password">Contraseña actual</label>
+              <input id="current-password" name="current_password" type="password" autocomplete="current-password" required>
+              <label for="new-password">Nueva contraseña</label>
+              <input id="new-password" name="new_password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+              <label for="confirm-password">Confirmar contraseña</label>
+              <input id="confirm-password" name="confirm_password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+              <button class="button button-primary" type="submit">Actualizar contraseña</button>
+              <p id="account-message" class="form-message" role="status" aria-live="polite"></p>
+            </form>
+            <div class="account-recovery">
+              <div>
+                <h4>Renovar códigos de recuperación</h4>
+                <p>Confirma la operación con un código actual de tu aplicación TOTP.</p>
+              </div>
+              <label for="recovery-totp-code">Código TOTP</label>
+              <input id="recovery-totp-code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code">
+              <button id="rotate-recovery-codes" class="button button-secondary" type="button">Renovar códigos</button>
+              <pre id="recovery-codes-display" hidden></pre>
             </div>
+          </section>
+        </section>
+
+        <section id="section-reports" class="dashboard-section" aria-labelledby="intro-title">
+          <div class="section-heading section-heading-row">
+            <div>
+              <p class="eyebrow">Centro de reportes</p>
+              <h2 id="intro-title">Consultas</h2>
+              <p>Elige un reporte, ajusta sus filtros y revisa o descarga el PDF.</p>
+            </div>
+            <span class="format-badge">PDF · Vista previa</span>
           </div>
-        </div>
-      </section>
-    </section>
+          <section class="workspace" aria-label="Generador de reportes">
+            <form id="report-form" class="controls">
+              <div class="field">
+                <label for="report-select">Reporte</label>
+                <select id="report-select" name="reporte" required></select>
+              </div>
+              <div id="report-filters" class="filters" aria-live="polite"></div>
+              <div class="actions">
+                <button class="button button-primary" type="submit">Ver vista previa</button>
+                <button class="button button-secondary" id="download-button" type="button">Descargar PDF</button>
+              </div>
+              <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
+            </form>
 
-    <section id="admin-panel" class="admin-panel" aria-labelledby="admin-title" hidden>
-      <div class="admin-heading">
-        <div>
-          <p class="eyebrow">Administración</p>
-          <h2 id="admin-title">Usuarios y auditoría</h2>
-        </div>
-        <button id="refresh-admin" class="button button-secondary" type="button">Actualizar datos</button>
-      </div>
-      <form id="create-user-form" class="inline-form">
-        <h3>Crear cuenta</h3>
-        <label for="new-user-email">Correo electrónico</label>
-        <input id="new-user-email" name="email" type="email" autocomplete="off" required>
-        <label for="new-user-role">Rol inicial</label>
-        <select id="new-user-role" name="role">
-          <option value="report_reader">Lector de reportes</option>
-          <option value="admin">Administrador</option>
-        </select>
-        <button class="button button-primary" type="submit">Crear cuenta</button>
-        <p id="create-user-message" class="form-message" role="status" aria-live="polite"></p>
-      </form>
-      <p class="table-caption">La contraseña temporal se muestra una sola vez; la persona deberá cambiarla y configurar TOTP.</p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Correo</th><th>Rol</th><th>Estado</th><th>MFA</th><th>Acciones</th></tr></thead>
-          <tbody id="user-rows"></tbody>
-        </table>
-      </div>
-      <div class="admin-heading audit-heading">
-        <h3>Eventos de auditoría recientes</h3>
-        <span id="audit-retention"></span>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Fecha (UTC)</th><th>Evento</th><th>Actor</th><th>Cuenta afectada</th><th>Recurso</th><th>Resultado</th></tr></thead>
-          <tbody id="audit-rows"></tbody>
-        </table>
-      </div>
-    </section>
+            <section class="preview-panel" aria-labelledby="preview-title">
+              <div class="preview-heading">
+                <div>
+                  <p class="eyebrow">Documento</p>
+                  <h3 id="preview-title">Vista previa del reporte</h3>
+                </div>
+                <span class="preview-hint">El PDF se abre en el navegador</span>
+              </div>
+              <div class="preview-frame">
+                <div id="preview-empty" class="preview-empty">
+                  <span class="document-icon" aria-hidden="true">PDF</span>
+                  <p>Elige un reporte y selecciona <strong>Ver vista previa</strong>.</p>
+                </div>
+                <div id="pdf-preview" class="pdf-viewer" hidden>
+                  <div class="pdf-toolbar" aria-label="Controles de vista previa">
+                    <div class="page-controls">
+                      <button class="viewer-button" id="previous-page" type="button" aria-label="Página anterior">Anterior</button>
+                      <span id="page-indicator" role="status" aria-live="polite">Página 0 de 0</span>
+                      <button class="viewer-button" id="next-page" type="button" aria-label="Página siguiente">Siguiente</button>
+                    </div>
+                    <div class="zoom-controls">
+                      <button class="viewer-button zoom-button" id="zoom-out" type="button" aria-label="Reducir zoom">−</button>
+                      <span id="zoom-indicator" role="status">100%</span>
+                      <button class="viewer-button zoom-button" id="zoom-in" type="button" aria-label="Aumentar zoom">+</button>
+                    </div>
+                  </div>
+                  <div class="pdf-page-wrap">
+                    <canvas id="pdf-canvas" aria-label="Página del reporte PDF"></canvas>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </section>
+        </section>
 
+        <section id="section-admin" class="dashboard-section" hidden aria-labelledby="admin-title">
+          <section id="admin-panel" class="admin-panel">
+            <div class="section-heading section-heading-row">
+              <div>
+                <p class="eyebrow">Control de acceso</p>
+                <h2 id="admin-title">Administración</h2>
+                <p>Crea cuentas, asigna roles y gestiona el acceso.</p>
+              </div>
+              <button id="refresh-admin" class="button button-secondary" type="button">Actualizar usuarios</button>
+            </div>
+            <form id="create-user-form" class="inline-form create-user-form">
+              <h3>Nueva cuenta</h3>
+              <label for="new-user-email">Correo electrónico</label>
+              <input id="new-user-email" name="email" type="email" autocomplete="off" required>
+              <label for="new-user-role">Rol inicial</label>
+              <select id="new-user-role" name="role">
+                <option value="report_reader">Lector de reportes</option>
+                <option value="admin">Administrador</option>
+              </select>
+              <button class="button button-primary" type="submit">Crear cuenta</button>
+              <p id="create-user-message" class="form-message" role="status" aria-live="polite"></p>
+              <p class="table-caption">La contraseña temporal se muestra una sola vez. La persona deberá cambiarla y configurar TOTP.</p>
+            </form>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Correo</th><th>Rol</th><th>Estado</th><th>MFA</th><th>Acciones</th></tr></thead>
+                <tbody id="user-rows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="section-audit" class="dashboard-section" hidden aria-labelledby="audit-title">
+          <section id="audit-panel" class="admin-panel">
+            <div class="section-heading section-heading-row">
+              <div>
+                <p class="eyebrow">Trazabilidad</p>
+                <h2 id="audit-title">Auditoría</h2>
+                <p>Actividad de autenticación, cambios de cuentas y consultas de reportes.</p>
+              </div>
+              <button id="refresh-audit" class="button button-secondary" type="button">Actualizar eventos</button>
+            </div>
+            <div class="audit-meta">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span id="audit-retention">Retención configurada: 365 días (purga manual)</span>
+            </div>
+            <p id="audit-message" class="form-message" role="status" aria-live="polite"></p>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Fecha (UTC)</th><th>Evento</th><th>Actor</th><th>Cuenta afectada</th><th>Recurso</th><th>Resultado</th></tr></thead>
+                <tbody id="audit-rows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      </div>
+    </div>
   </main>
 
   <footer id="page-footer" hidden>
