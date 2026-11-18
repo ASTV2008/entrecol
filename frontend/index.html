@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183b56">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>Entrecol | Reportes PDF</title>
+  <link rel="stylesheet" href="/css/reportes.css?v=6">
+  <script src="/js/pages/reportes.js?v=6" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand-mark" aria-hidden="true">E</div>
+    <div>
+      <p class="eyebrow">Entrecol · Centro de reportes</p>
+      <h1>Reportes en PDF</h1>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="intro-title">
+      <div>
+        <p class="eyebrow">Etapa 9</p>
+        <h2 id="intro-title">Consulta, vista previa y descarga</h2>
+        <p>Selecciona un reporte y sus filtros. Puedes revisarlo aquí mismo o descargar el PDF.</p>
+      </div>
+      <span class="format-badge">PDF · Vista previa</span>
+    </section>
+
+    <section class="workspace" aria-label="Generador de reportes">
+      <form id="report-form" class="controls">
+        <div class="field">
+          <label for="report-select">Reporte</label>
+          <select id="report-select" name="reporte" required></select>
+        </div>
+        <div id="report-filters" class="filters" aria-live="polite"></div>
+        <div class="actions">
+          <button class="button button-primary" type="submit">Ver vista previa</button>
+          <button class="button button-secondary" id="download-button" type="button">Descargar PDF</button>
+        </div>
+        <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
+      </form>
+
+      <section class="preview-panel" aria-labelledby="preview-title">
+        <div class="preview-heading">
+          <div>
+            <p class="eyebrow">Documento</p>
+            <h2 id="preview-title">Vista previa del reporte</h2>
+          </div>
+          <span class="preview-hint">El PDF se abre en el navegador</span>
+        </div>
+        <div class="preview-frame">
+          <div id="preview-empty" class="preview-empty">
+            <span class="document-icon" aria-hidden="true">PDF</span>
+            <p>Elige un reporte y selecciona <strong>Ver vista previa</strong>.</p>
+          </div>
+          <div id="pdf-preview" class="pdf-viewer" hidden>
+            <div class="pdf-toolbar" aria-label="Controles de vista previa">
+              <div class="page-controls">
+                <button class="viewer-button" id="previous-page" type="button" aria-label="Página anterior">Anterior</button>
+                <span id="page-indicator" role="status" aria-live="polite">Página 0 de 0</span>
+                <button class="viewer-button" id="next-page" type="button" aria-label="Página siguiente">Siguiente</button>
+              </div>
+              <div class="zoom-controls">
+                <button class="viewer-button zoom-button" id="zoom-out" type="button" aria-label="Reducir zoom">−</button>
+                <span id="zoom-indicator" role="status">100%</span>
+                <button class="viewer-button zoom-button" id="zoom-in" type="button" aria-label="Aumentar zoom">+</button>
+              </div>
+            </div>
+            <div class="pdf-page-wrap">
+              <canvas id="pdf-canvas" aria-label="Página del reporte PDF"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <span>Entrecol</span>
+    <span>Reportes generados con los datos de la API</span>
+  </footer>
+</body>
+</html>

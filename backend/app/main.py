@@ -1,6 +1,9 @@
 """Punto de entrada de la aplicación FastAPI."""
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.core.config import get_settings
@@ -17,6 +20,12 @@ def create_app() -> FastAPI:
     async def parametro_invalido(_: Request, error: ErrorDeParametro) -> JSONResponse:
         """Los servicios no conocen HTTP: aquí un parámetro inválido se vuelve un 422 con su explicación."""
         return JSONResponse(status_code=422, content={"detail": str(error)})
+
+    directorios_frontend = (Path("/frontend"), Path(__file__).resolve().parents[2] / "frontend")
+    for directorio in directorios_frontend:
+        if directorio.is_dir():
+            app.mount("/", StaticFiles(directory=directorio, html=True), name="frontend")
+            break
 
     return app
 

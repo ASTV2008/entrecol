@@ -24,6 +24,21 @@ def test_endpoint_pdf_es_vista_previa_y_admite_descarga(cliente):
     assert descarga.headers["content-disposition"].startswith("attachment;")
 
 
+def test_pagina_de_reportes_y_recursos_estaticos(cliente):
+    pagina = cliente.get("/")
+    script = cliente.get("/js/pages/reportes.js")
+    pdfjs = cliente.get("/js/vendor/pdf.min.mjs")
+    trabajador_pdfjs = cliente.get("/js/vendor/pdf.worker.min.mjs")
+
+    assert pagina.status_code == 200
+    assert "Reportes en PDF" in pagina.text
+    assert 'id="pdf-canvas"' in pagina.text
+    assert script.status_code == 200
+    assert "Top de libros por año" in script.text
+    assert pdfjs.status_code == 200
+    assert trabajador_pdfjs.status_code == 200
+
+
 def test_endpoint_pdf_conserva_validacion_de_parametros(cliente):
     assert cliente.get("/api/v1/reportes/entretenimiento/libros/top/pdf").status_code == 422
     assert cliente.get(
