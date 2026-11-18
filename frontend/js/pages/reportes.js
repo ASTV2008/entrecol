@@ -304,6 +304,10 @@ async function generarVistaPrevia() {
   try {
     await liberarDocumento();
     const respuesta = await fetch(crearUrl(), { signal: solicitudVistaPrevia.signal });
+    if (respuesta.status === 401) {
+      window.location.replace("/login.html");
+      return;
+    }
     if (!respuesta.ok) {
       const cuerpo = await respuesta.text();
       let detalle = cuerpo || `Error HTTP ${respuesta.status}`;
@@ -390,17 +394,41 @@ window.addEventListener("resize", () => {
   }, 150);
 });
 
-botonDescarga.addEventListener("click", () => {
+botonDescarga.addEventListener("click", async () => {
   mensaje.textContent = "";
   if (!form.reportValidity()) return;
 
-  const enlace = document.createElement("a");
-  enlace.href = crearUrl(true).toString();
-  enlace.download = "";
-  enlace.hidden = true;
-  document.body.append(enlace);
-  enlace.click();
-  enlace.remove();
+  botonDescarga.disabled = true;
+  try {
+    const respuesta = await fetch(crearUrl(true));
+    if (respuesta.status === 401) {
+      window.location.replace("/login.html");
+      return;
+    }
+    if (!respuesta.ok) {
+      const cuerpo = await respuesta.text();
+      let detalle = cuerpo || `Error HTTP ${respuesta.status}`;
+      try {
+        detalle = JSON.parse(cuerpo).detail ?? detalle;
+      } catch {
+        detalle = cuerpo || `Error HTTP ${respuesta.status}`;
+      }
+      throw new Error(detalle);
+    }
+    const archivo = URL.createObjectURL(await respuesta.blob());
+    const enlace = document.createElement("a");
+    enlace.href = archivo;
+    enlace.download = respuesta.headers.get("Content-Disposition")?.match(/filename="?([^";]+)"?/i)?.[1] ?? "reporte.pdf";
+    enlace.hidden = true;
+    document.body.append(enlace);
+    enlace.click();
+    enlace.remove();
+    window.setTimeout(() => URL.revokeObjectURL(archivo), 1000);
+  } catch (error) {
+    mensaje.textContent = error.message || "No se pudo descargar el PDF.";
+  } finally {
+    botonDescarga.disabled = false;
+  }
 });
 
 cargarReportes();

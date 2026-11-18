@@ -7,18 +7,46 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Entrecol | Reportes PDF</title>
   <link rel="stylesheet" href="/css/reportes.css?v=6">
+  <script src="/js/pages/auth.js?v=1" defer></script>
   <script src="/js/pages/reportes.js?v=6" defer></script>
 </head>
-<body>
+<body data-page="reports">
   <header class="site-header">
     <div class="brand-mark" aria-hidden="true">E</div>
     <div>
       <p class="eyebrow">Entrecol · Centro de reportes</p>
       <h1>Reportes en PDF</h1>
     </div>
+    <div id="session-controls" class="session-controls" hidden>
+      <span id="session-identity"></span>
+      <button id="logout-button" class="viewer-button" type="button">Cerrar sesión</button>
+    </div>
   </header>
 
-  <main>
+  <main id="reports-main" hidden>
+    <section class="account-panel" aria-labelledby="account-title">
+      <div>
+        <p class="eyebrow">Seguridad</p>
+        <h2 id="account-title">Cambiar contraseña</h2>
+      </div>
+      <form id="account-password-form" class="inline-form">
+        <label for="current-password">Contraseña actual</label>
+        <input id="current-password" name="current_password" type="password" autocomplete="current-password" required>
+        <label for="new-password">Nueva contraseña</label>
+        <input id="new-password" name="new_password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+        <label for="confirm-password">Confirmar contraseña</label>
+        <input id="confirm-password" name="confirm_password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+        <button class="button button-secondary" type="submit">Actualizar contraseña</button>
+        <p id="account-message" class="form-message" role="status" aria-live="polite"></p>
+        <div class="account-recovery">
+          <label for="recovery-totp-code">Código TOTP para renovar códigos de recuperación</label>
+          <input id="recovery-totp-code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code">
+          <button id="rotate-recovery-codes" class="button button-secondary" type="button">Renovar códigos</button>
+          <pre id="recovery-codes-display" hidden></pre>
+        </div>
+      </form>
+    </section>
+
     <section class="intro" aria-labelledby="intro-title">
       <div>
         <p class="eyebrow">Etapa 9</p>
@@ -75,9 +103,49 @@
         </div>
       </section>
     </section>
+
+    <section id="admin-panel" class="admin-panel" aria-labelledby="admin-title" hidden>
+      <div class="admin-heading">
+        <div>
+          <p class="eyebrow">Administración</p>
+          <h2 id="admin-title">Usuarios y auditoría</h2>
+        </div>
+        <button id="refresh-admin" class="button button-secondary" type="button">Actualizar datos</button>
+      </div>
+      <form id="create-user-form" class="inline-form">
+        <h3>Crear cuenta</h3>
+        <label for="new-user-email">Correo electrónico</label>
+        <input id="new-user-email" name="email" type="email" autocomplete="off" required>
+        <label for="new-user-role">Rol inicial</label>
+        <select id="new-user-role" name="role">
+          <option value="report_reader">Lector de reportes</option>
+          <option value="admin">Administrador</option>
+        </select>
+        <button class="button button-primary" type="submit">Crear cuenta</button>
+        <p id="create-user-message" class="form-message" role="status" aria-live="polite"></p>
+      </form>
+      <p class="table-caption">La contraseña temporal se muestra una sola vez; la persona deberá cambiarla y configurar TOTP.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Correo</th><th>Rol</th><th>Estado</th><th>MFA</th><th>Acciones</th></tr></thead>
+          <tbody id="user-rows"></tbody>
+        </table>
+      </div>
+      <div class="admin-heading audit-heading">
+        <h3>Eventos de auditoría recientes</h3>
+        <span id="audit-retention"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fecha (UTC)</th><th>Evento</th><th>Actor</th><th>Cuenta afectada</th><th>Recurso</th><th>Resultado</th></tr></thead>
+          <tbody id="audit-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
 
-  <footer>
+  <footer id="page-footer" hidden>
     <span>Entrecol</span>
     <span>Reportes generados con los datos de la API</span>
   </footer>

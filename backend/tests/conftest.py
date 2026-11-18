@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 import app.models  # noqa: F401  (registra los modelos en Base.metadata)
 from app.core.config import get_settings
 from app.db.base import Base
+from app.security.dependencies import audit_report_access
 
 
 @pytest.fixture(scope="session")
@@ -50,7 +51,23 @@ def sesion(motor_pruebas):
 
 @pytest.fixture
 def cliente(sesion):
-    """Cliente HTTP de la API real, pero conectado a la sesión de pruebas (se deshace al terminar)."""
+    """Aísla el guardado real de reportes en las pruebas funcionales heredadas."""
+    from fastapi.testclient import TestClient
+
+    from app.db.session import get_db
+    from app.main import app
+
+    app.dependency_overrides[get_db] = lambda: sesion
+    app.dependency_overrides[audit_report_access] = lambda: None
+    try:
+        yield TestClient(app, base_url="https://testserver")
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def cliente_sin_auth(sesion):
+    """Cliente HTTP sin identidad preconfigurada para probar rutas protegidas y auth real."""
     from fastapi.testclient import TestClient
 
     from app.db.session import get_db
@@ -58,6 +75,6 @@ def cliente(sesion):
 
     app.dependency_overrides[get_db] = lambda: sesion
     try:
-        yield TestClient(app)
+        yield TestClient(app, base_url="https://testserver")
     finally:
         app.dependency_overrides.clear()

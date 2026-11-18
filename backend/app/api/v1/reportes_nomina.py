@@ -15,8 +15,13 @@ from app.services.reporte_nomina import ServicioReporteNomina
 from app.services.reporte_novedades import ServicioReporteNovedades
 from app.services.reporte_personal import ServicioReportePersonal
 from app.services.reporte_salud_pension import ServicioReporteSaludPension
+from app.security.dependencies import audit_report_access
 
-router = APIRouter(prefix="/reportes", tags=["Reportes de nómina"])
+router = APIRouter(
+    prefix="/reportes",
+    tags=["Reportes de nómina"],
+    dependencies=[Depends(audit_report_access)],
+)
 
 OrdenNombres = Annotated[Orden, Query(description="Sentido del orden de los NOMBRES: asc o desc")]
 # F1 y F2 en formato MM/AAAA (el servicio valida además que F1 <= F2)

@@ -13,8 +13,13 @@ from app.schemas.reportes_entretenimiento import (
 )
 from app.services.reporte_libros import ServicioReporteLibros
 from app.services.reporte_peliculas import ServicioReportePeliculas
+from app.security.dependencies import audit_report_access
 
-router = APIRouter(prefix="/reportes/entretenimiento", tags=["Reportes de entretenimiento"])
+router = APIRouter(
+    prefix="/reportes/entretenimiento",
+    tags=["Reportes de entretenimiento"],
+    dependencies=[Depends(audit_report_access)],
+)
 
 OrdenTitulos = Annotated[Orden, Query(description="Sentido del orden de los TÍTULOS: asc o desc")]
 Anio = Annotated[int, Query(ge=1, le=9999, description="Año AAAA")]

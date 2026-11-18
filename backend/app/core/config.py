@@ -6,6 +6,7 @@ el mismo código funciona en desarrollo, pruebas y producción.
 """
 from functools import lru_cache
 
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL
 
@@ -27,8 +28,22 @@ class Settings(BaseSettings):
     db_user: str
     db_password: str
 
-    # Se usará para firmar tokens de sesión
+    # Clave de aplicación usada para derivar tokens CSRF
     secret_key: str
+    totp_encryption_key: str
+
+    # Sesiones: 30 minutos de inactividad y un máximo absoluto de 8 horas.
+    session_idle_timeout_minutes: int = Field(default=30, ge=1, le=240)
+    session_absolute_timeout_hours: int = Field(default=8, ge=1, le=24)
+    audit_retention_days: int = Field(default=365, ge=30, le=3650)
+    cookie_secure: bool = True
+
+    @field_validator("secret_key")
+    @classmethod
+    def secret_key_must_be_long_enough(cls, value: str) -> str:
+        if len(value.encode("utf-8")) < 32:
+            raise ValueError("SECRET_KEY debe contener al menos 32 bytes aleatorios.")
+        return value
 
     @property
     def database_url(self) -> URL:

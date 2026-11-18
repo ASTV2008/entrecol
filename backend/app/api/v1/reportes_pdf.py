@@ -16,8 +16,14 @@ from app.services.reporte_novedades import ServicioReporteNovedades
 from app.services.reporte_peliculas import ServicioReportePeliculas
 from app.services.reporte_personal import ServicioReportePersonal
 from app.services.reporte_salud_pension import ServicioReporteSaludPension
+from app.security.dependencies import audit_report_access
 
-router = APIRouter(prefix="/reportes", tags=["Exportación PDF"], default_response_class=PDFResponse)
+router = APIRouter(
+    prefix="/reportes",
+    tags=["Exportación PDF"],
+    default_response_class=PDFResponse,
+    dependencies=[Depends(audit_report_access)],
+)
 
 OrdenQuery = Annotated[Orden, Query(description="Sentido del orden: asc o desc")]
 Periodo = Annotated[str, Query(description="Periodo MM/AAAA", examples=["03/2022"])]

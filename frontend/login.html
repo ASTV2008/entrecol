@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183b56">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>Entrecol | Acceso</title>
+  <link rel="stylesheet" href="/css/reportes.css?v=6">
+  <script src="/js/pages/auth.js?v=1" defer></script>
+</head>
+<body data-page="login">
+  <header class="site-header">
+    <div class="brand-mark" aria-hidden="true">E</div>
+    <div>
+      <p class="eyebrow">Entrecol · Acceso seguro</p>
+      <h1>Autenticación</h1>
+    </div>
+  </header>
+  <main class="auth-main">
+    <section class="auth-card" aria-labelledby="auth-title">
+      <p class="eyebrow">Cuenta institucional</p>
+      <h2 id="auth-title">Iniciar sesión</h2>
+      <p id="auth-description">Ingresa con el correo y la contraseña asignados por un administrador.</p>
+
+      <form id="login-form" class="auth-form" data-flow="login">
+        <label for="login-email">Correo electrónico</label>
+        <input id="login-email" name="email" type="email" autocomplete="username" maxlength="254" required>
+        <label for="login-password">Contraseña</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" maxlength="128" required>
+        <button class="button button-primary" type="submit">Continuar</button>
+      </form>
+
+      <form id="password-change-form" class="auth-form" data-flow="password_change" hidden>
+        <label for="temporary-password">Nueva contraseña</label>
+        <input id="temporary-password" name="new_password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+        <label for="temporary-password-confirm">Confirmar nueva contraseña</label>
+        <input id="temporary-password-confirm" name="confirm_password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required>
+        <button class="button button-primary" type="submit">Guardar contraseña</button>
+      </form>
+
+      <section id="totp-setup" data-flow="totp_setup" hidden>
+        <p>Escanea este código con una aplicación autenticadora. Si no puedes escanearlo, ingresa manualmente la clave mostrada.</p>
+        <img id="totp-qr" class="totp-qr" alt="Código QR de configuración TOTP">
+        <p class="secret-label">Clave de configuración</p>
+        <code id="totp-secret" class="totp-secret"></code>
+        <p class="muted-copy">La clave y el QR son secretos. No los compartas ni los guardes en un dispositivo público.</p>
+        <form id="totp-setup-form" class="auth-form">
+          <label for="setup-code">Código de seis dígitos de tu aplicación</label>
+          <input id="setup-code" name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
+          <button class="button button-primary" type="submit">Verificar y activar MFA</button>
+        </form>
+      </section>
+
+      <form id="totp-login-form" class="auth-form" data-flow="totp_required" hidden>
+        <label for="totp-code">Código de autenticación o código de recuperación</label>
+        <input id="totp-code" name="code" inputmode="text" autocomplete="one-time-code" maxlength="32" required>
+        <button class="button button-primary" type="submit">Verificar</button>
+      </form>
+
+      <section id="recovery-codes-panel" data-flow="recovery_codes" hidden>
+        <h3>Guarda tus códigos de recuperación</h3>
+        <p>Cada código sirve una sola vez. No volverán a mostrarse.</p>
+        <ul id="recovery-codes-list" class="recovery-codes"></ul>
+        <label class="acknowledgement">
+          <input id="recovery-saved" type="checkbox">
+          Guardé los códigos en un lugar seguro.
+        </label>
+        <button id="continue-after-enrollment" class="button button-primary" type="button" disabled>Continuar a los reportes</button>
+      </section>
+
+      <p id="auth-message" class="form-message" role="alert" aria-live="assertive"></p>
+    </section>
+  </main>
+  <footer>
+    <span>Entrecol</span>
+    <span>Sesiones seguras · MFA obligatorio</span>
+  </footer>
+</body>
+</html>
