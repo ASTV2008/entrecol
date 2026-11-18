@@ -21,7 +21,7 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "no-referrer")
-        if request.url.path.startswith(("/api/v1/auth", "/api/v1/reportes")):
+        if request.url.path.startswith(("/api/v1/auth", "/api/v1/reportes", "/api/v1/cargas")):
             response.headers["Cache-Control"] = "no-store"
         return response
 

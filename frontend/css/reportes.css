@@ -313,6 +313,76 @@ main {
   gap: 20px;
 }
 
+.upload-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.65fr) minmax(0, 1.35fr);
+  align-items: start;
+  gap: 18px;
+}
+
+.upload-controls {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.upload-controls h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 17px;
+}
+
+.upload-controls .field {
+  margin: 0;
+}
+
+.field-hint {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+input[type="file"] {
+  min-height: 48px;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.upload-history .section-heading {
+  margin-bottom: 0;
+}
+
+.upload-history .section-heading h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 18px;
+}
+
+.upload-result {
+  padding: 12px;
+  border: 1px solid #cfe6da;
+  border-radius: 9px;
+  color: #285d46;
+  background: #f2faf5;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.upload-result p {
+  margin: 0 0 7px;
+}
+
+.upload-result ul {
+  display: grid;
+  gap: 5px;
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+#upload-message.success-message {
+  color: #28714e;
+}
+
 .controls,
 .preview-panel {
   border: 1px solid var(--border);
@@ -863,6 +933,10 @@ td select {
   }
 
   .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-layout {
     grid-template-columns: 1fr;
   }
 

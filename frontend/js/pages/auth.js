@@ -8,7 +8,9 @@ const authTitle = document.querySelector("#auth-title");
 
 async function requestJson(path, options = {}) {
   const headers = new Headers(options.headers ?? {});
-  if (options.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
   if (options.method && options.method !== "GET" && csrfToken) {
     headers.set("X-CSRF-Token", csrfToken);
   }
@@ -267,6 +269,99 @@ function showAuditMessage(message = "") {
   document.querySelector("#audit-message").textContent = message;
 }
 
+function showUploadHistoryMessage(message = "") {
+  document.querySelector("#uploads-history-message").textContent = message;
+}
+
+function updateUploadFields() {
+  const type = document.querySelector("#upload-type").value;
+  const file = document.querySelector("#upload-file");
+  const periodField = document.querySelector("#upload-period-field");
+  const period = document.querySelector("#upload-period");
+  const extensions = { nomina: ".xlsx", peliculas: ".dat", libros: ".json" };
+  file.value = "";
+  file.accept = extensions[type];
+  periodField.hidden = type !== "nomina";
+  period.required = type === "nomina";
+  if (type !== "nomina") period.value = "";
+}
+
+function renderUploadResult(result) {
+  const output = document.querySelector("#upload-result");
+  const { carga, informe } = result;
+  const summary = document.createElement("p");
+  summary.textContent =
+    `${carga.nombre_archivo}: ${informe.leidas} filas leídas, ${informe.aceptadas} aceptadas, ` +
+    `${informe.rechazadas} rechazadas; ${informe.nuevas} nuevas y ${informe.actualizadas} actualizadas.`;
+  output.replaceChildren(summary);
+  const lines = [
+    ...informe.advertencias,
+    ...informe.rechazos.slice(0, 10).map((item) =>
+      `${item.origen ? `${item.origen}, ` : ""}fila ${item.linea}: ${item.motivo}`),
+  ];
+  if (informe.rechazos.length > 10) {
+    lines.push(`Se omitieron ${informe.rechazos.length - 10} rechazos adicionales.`);
+  }
+  if (lines.length) {
+    const list = document.createElement("ul");
+    for (const line of lines) {
+      const item = document.createElement("li");
+      item.textContent = line;
+      list.append(item);
+    }
+    output.append(list);
+  }
+  output.hidden = false;
+}
+
+async function refreshUploads() {
+  const loads = await requestJson("/api/v1/cargas?limit=50");
+  const rows = document.querySelector("#upload-rows");
+  rows.replaceChildren();
+  for (const load of loads) {
+    const row = document.createElement("tr");
+    createCell(row, `${String(load.fecha_carga).replace("T", " ")} UTC`);
+    createCell(row, load.usuario_email);
+    createCell(row, load.nombre_archivo);
+    createCell(row, load.tipo);
+    createCell(row, load.periodo || "—");
+    const status = createCell(row, load.estado === "succeeded" ? "Completada" : "Fallida");
+    if (load.mensaje) status.title = load.mensaje;
+    createCell(row, `${load.filas_leidas} / ${load.filas_aceptadas} / ${load.filas_rechazadas}`);
+    rows.append(row);
+  }
+  showUploadHistoryMessage("");
+}
+
+async function handleUpload(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const message = document.querySelector("#upload-message");
+  const output = document.querySelector("#upload-result");
+  const submitButton = form.querySelector("button[type='submit']");
+  message.classList.remove("success-message");
+  message.textContent = "";
+  output.replaceChildren();
+  output.hidden = true;
+  submitButton.disabled = true;
+  try {
+    const result = await requestJson("/api/v1/cargas", {
+      method: "POST",
+      body: new FormData(form),
+    });
+    form.reset();
+    updateUploadFields();
+    message.textContent = `Carga registrada con el identificador ${result.carga.id}.`;
+    message.classList.add("success-message");
+    renderUploadResult(result);
+    void refreshUploads().catch((error) => showUploadHistoryMessage(error.message));
+  } catch (error) {
+    message.textContent = error.message;
+  } finally {
+    submitButton.disabled = false;
+  }
+}
+
 async function handleCreateUser(event) {
   event.preventDefault();
   const values = new FormData(event.currentTarget);
@@ -295,15 +390,17 @@ function activateReports(session) {
   document.querySelector("#session-identity").textContent =
     `${currentUser.email} · ${roleName(currentUser.role)}`;
   const isAdmin = currentUser.role === "admin";
+  document.querySelector("#nav-uploads").hidden = !isAdmin;
   document.querySelector("#nav-admin").hidden = !isAdmin;
   document.querySelector("#nav-audit").hidden = !isAdmin;
+  document.querySelector("#section-uploads").hidden = !isAdmin;
   document.querySelector("#section-admin").hidden = !isAdmin;
   document.querySelector("#section-audit").hidden = !isAdmin;
   activateSection("reports");
 }
 
 function activateSection(name) {
-  if ((name === "admin" || name === "audit") && currentUser?.role !== "admin") return;
+  if ((name === "uploads" || name === "admin" || name === "audit") && currentUser?.role !== "admin") return;
   for (const section of document.querySelectorAll(".dashboard-section")) {
     section.hidden = section.id !== `section-${name}`;
   }
@@ -318,6 +415,8 @@ function activateSection(name) {
     void refreshUsers().catch((error) => showAdminMessage(error.message));
   } else if (name === "audit") {
     void refreshAudit().catch((error) => showAuditMessage(error.message));
+  } else if (name === "uploads") {
+    void refreshUploads().catch((error) => showUploadHistoryMessage(error.message));
   }
 }
 
@@ -354,6 +453,12 @@ function initializeReportsPage() {
   document.querySelector("#refresh-audit").addEventListener("click", () => {
     void refreshAudit().catch((error) => showAuditMessage(error.message));
   });
+  document.querySelector("#refresh-uploads").addEventListener("click", () => {
+    void refreshUploads().catch((error) => showUploadHistoryMessage(error.message));
+  });
+  document.querySelector("#upload-type").addEventListener("change", updateUploadFields);
+  document.querySelector("#upload-form").addEventListener("submit", handleUpload);
+  updateUploadFields();
   for (const link of document.querySelectorAll("[data-section-target]")) {
     link.addEventListener("click", () => activateSection(link.dataset.sectionTarget));
   }

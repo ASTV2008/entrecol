@@ -1,11 +1,12 @@
 """Agrupa todos los routers de la versión 1 de la API."""
 from fastapi import APIRouter
 
-from app.api.v1 import auth, health, reportes_entretenimiento, reportes_nomina, reportes_pdf
+from app.api.v1 import auth, cargas, health, reportes_entretenimiento, reportes_nomina, reportes_pdf
 
 api_router = APIRouter()
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
+api_router.include_router(cargas.router)
 api_router.include_router(reportes_nomina.router)
 api_router.include_router(reportes_entretenimiento.router)
 api_router.include_router(reportes_pdf.router)

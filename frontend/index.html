@@ -5,17 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#183b56">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
-  <title>Entrecol | Reportes PDF</title>
-  <link rel="stylesheet" href="/css/reportes.css?v=7">
-  <script src="/js/pages/auth.js?v=2" defer></script>
+  <title>Entrecol | Centro de reportes</title>
+  <link rel="stylesheet" href="/css/reportes.css?v=8">
+  <script src="/js/pages/auth.js?v=3" defer></script>
   <script src="/js/pages/reportes.js?v=6" defer></script>
 </head>
 <body data-page="reports">
   <header class="site-header">
     <div class="brand-mark" aria-hidden="true">E</div>
     <div>
-      <p class="eyebrow">Entrecol · Centro de reportes</p>
-      <h1>Reportes en PDF</h1>
+      <p class="eyebrow">Entrecol · Datos y reportes</p>
+      <h1>Centro de reportes</h1>
     </div>
     <div id="session-controls" class="session-controls" hidden>
       <span id="session-identity"></span>
@@ -34,11 +34,14 @@
         <button class="nav-link" type="button" data-section-target="reports" aria-current="page">
           <span class="nav-number">02</span><span>Consultas</span>
         </button>
+        <button id="nav-uploads" class="nav-link" type="button" data-section-target="uploads" hidden>
+          <span class="nav-number">03</span><span>Carga de archivos</span>
+        </button>
         <button id="nav-admin" class="nav-link" type="button" data-section-target="admin" hidden>
-          <span class="nav-number">03</span><span>Administración</span>
+          <span class="nav-number">04</span><span>Administración</span>
         </button>
         <button id="nav-audit" class="nav-link" type="button" data-section-target="audit" hidden>
-          <span class="nav-number">04</span><span>Auditoría</span>
+          <span class="nav-number">05</span><span>Auditoría</span>
         </button>
         <div class="nav-note">
           <span class="status-dot" aria-hidden="true"></span>
@@ -150,6 +153,59 @@
               </div>
             </section>
           </section>
+        </section>
+
+        <section id="section-uploads" class="dashboard-section" hidden aria-labelledby="uploads-title">
+          <div class="section-heading">
+            <p class="eyebrow">Datos de la aplicación</p>
+            <h2 id="uploads-title">Carga de archivos</h2>
+            <p>Sube una fuente con la estructura esperada para actualizar los reportes.</p>
+          </div>
+          <div class="upload-layout">
+            <form id="upload-form" class="controls upload-controls" enctype="multipart/form-data">
+              <h3>Nuevo archivo</h3>
+              <div class="field">
+                <label for="upload-type">Tipo de fuente</label>
+                <select id="upload-type" name="tipo" required>
+                  <option value="peliculas">Películas · movies.dat</option>
+                  <option value="libros">Libros · Books.json</option>
+                  <option value="nomina">Nómina · Nomina.xlsx</option>
+                </select>
+              </div>
+              <div id="upload-period-field" class="field" hidden>
+                <label for="upload-period">Período de nómina</label>
+                <input id="upload-period" name="periodo" type="month">
+              </div>
+              <div class="field">
+                <label for="upload-file">Archivo</label>
+                <input id="upload-file" name="archivo" type="file" accept=".dat" required>
+                <span class="field-hint">Máximo 20 MiB. Se procesa durante la solicitud y no se conserva en el servidor.</span>
+              </div>
+              <button class="button button-primary" type="submit">Validar y cargar</button>
+              <p id="upload-message" class="form-message" role="status" aria-live="polite"></p>
+              <div id="upload-result" class="upload-result" aria-live="polite" hidden></div>
+            </form>
+
+            <section class="admin-panel upload-history" aria-labelledby="upload-history-title">
+              <div class="section-heading section-heading-row">
+                <div>
+                  <p class="eyebrow">Registro de actividad</p>
+                  <h3 id="upload-history-title">Historial de cargas</h3>
+                  <p>Últimas 50 cargas exitosas y fallidas.</p>
+                </div>
+                <button id="refresh-uploads" class="button button-secondary" type="button">Actualizar</button>
+              </div>
+              <p id="uploads-history-message" class="form-message" role="status" aria-live="polite"></p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr><th>Fecha (UTC)</th><th>Usuario</th><th>Archivo</th><th>Tipo</th><th>Período</th><th>Resultado</th><th>Filas</th></tr>
+                  </thead>
+                  <tbody id="upload-rows"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
         </section>
 
         <section id="section-admin" class="dashboard-section" hidden aria-labelledby="admin-title">
