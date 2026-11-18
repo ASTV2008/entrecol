@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from app.reports.pdf import generar_pdf
+from app.reports.pdf import generar_pdf, respuesta_pdf
 from app.schemas.reportes import Grafico, Serie
 from app.schemas.reportes_entretenimiento import LibroPuesto, ReporteTopPorAnio, TopDelAnio
 
@@ -44,6 +44,14 @@ def test_endpoint_pdf_conserva_validacion_de_parametros(cliente):
     assert cliente.get(
         "/api/v1/reportes/entretenimiento/libros/top/pdf?n=3&min_calificaciones=0"
     ).status_code == 422
+
+
+def test_nombre_pdf_de_descarga_preserva_letras_accentuadas():
+    reporte = ReporteTopPorAnio(desde=None, hasta=None, criterio="Prueba", anios=[])
+
+    respuesta = respuesta_pdf("Top de libros por año", reporte, descargar=True)
+
+    assert respuesta.headers["content-disposition"] == 'attachment; filename="top-de-libros-por-ano.pdf"'
 
 
 @pytest.mark.parametrize("ruta", [

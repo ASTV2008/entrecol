@@ -7,6 +7,7 @@ from html import escape
 from io import BytesIO
 from pathlib import Path
 from typing import Any
+import unicodedata
 
 import reportlab
 from fastapi import Response
@@ -313,7 +314,8 @@ def generar_pdf(titulo: str, reporte: BaseModel) -> bytes:
 
 def respuesta_pdf(titulo: str, reporte: BaseModel, descargar: bool = False) -> Response:
     """Entrega el PDF en línea para vista previa o como adjunto para descargar."""
-    nombre = re.sub(r"[^a-zA-Z0-9_-]+", "-", titulo).strip("-").lower() or "reporte"
+    titulo_ascii = unicodedata.normalize("NFKD", titulo).encode("ascii", "ignore").decode("ascii")
+    nombre = re.sub(r"[^a-zA-Z0-9_-]+", "-", titulo_ascii).strip("-").lower() or "reporte"
     disposicion = "attachment" if descargar else "inline"
     return PDFResponse(
         content=generar_pdf(titulo, reporte),
