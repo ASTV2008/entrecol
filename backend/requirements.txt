@@ -1,4 +1,4 @@
-# Dependencias del backend (versiones fijadas: son las probadas).
+# Dependencias de ejecución del backend (versiones fijadas y probadas).
 fastapi==0.162.0
 python-multipart==0.0.20
 uvicorn[standard]==0.54.0
@@ -11,14 +11,8 @@ cryptography==46.0.3
 qrcode[pil]==8.2
 email-validator==2.3.0
 
-# Pruebas automáticas. Más adelante se separará en un requirements-dev.txt.
-pytest==9.2.0
-
 # Lectura de Nomina.xlsx (ETL de nómina)
 openpyxl==3.1.5
-
-# Cliente HTTP de las pruebas de la API (fastapi.testclient)
-httpx==0.28.1
 
 # Generación de PDF de reportes (tablas y gráficos vectoriales)
 reportlab==4.4.4

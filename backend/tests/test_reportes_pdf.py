@@ -31,7 +31,9 @@ def test_pagina_de_reportes_y_recursos_estaticos(cliente):
     trabajador_pdfjs = cliente.get("/js/vendor/pdf.worker.min.mjs")
 
     assert pagina.status_code == 200
-    assert "Reportes en PDF" in pagina.text
+    assert "Explora las cinco áreas" in pagina.text
+    assert 'data-report-category="Nómina"' in pagina.text
+    assert 'id="report-data-button"' in pagina.text
     assert 'id="pdf-canvas"' in pagina.text
     assert script.status_code == 200
     assert "Top de libros por año" in script.text

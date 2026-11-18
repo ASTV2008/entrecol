@@ -1,0 +1,5 @@
+-r backend/requirements.txt
+
+# Herramientas exclusivas de pruebas; no se instalan en la imagen de ejecución.
+pytest==9.2.0
+httpx==0.28.1
