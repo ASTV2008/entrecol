@@ -57,6 +57,14 @@ El primer acceso de cada persona presenta un QR local para configurar una aplica
 
 Una cuenta puede renovar sus códigos de recuperación con un TOTP actual. Si alguien pierde tanto su autenticador como sus códigos, otro administrador puede restablecerle MFA desde la administración. Para recuperar el único administrador, ejecutar `docker compose exec api python -m app.security.cli reset-totp --email correo --confirm` desde el host autorizado; la cuenta deberá registrar TOTP de nuevo.
 
+Si se olvida la contraseña del único administrador pero aún se conserva el acceso a su autenticador, puede restablecerse desde el host autorizado:
+
+```sh
+docker compose exec api python -m app.security.cli reset-password --email correo --confirm
+```
+
+El comando genera una contraseña temporal, revoca las sesiones existentes y exige cambiarla al volver a iniciar sesión.
+
 ## Auditoría y operación
 
 Los eventos se consultan desde la sección de administración. Para eliminar manualmente eventos anteriores al período de retención:

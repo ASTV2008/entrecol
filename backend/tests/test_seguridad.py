@@ -4,10 +4,13 @@ import time
 
 import pyotp
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from app.models.seguridad import CodigoRecuperacion, EventoAuditoria, Usuario
+from app.security import cli
 from app.security.service import (
     decrypt_totp_secret, encrypt_totp_secret, generate_recovery_codes, hash_password,
+    verify_password,
 )
 
 
@@ -312,3 +315,24 @@ def test_admin_puede_reiniciar_totp_de_otra_cuenta(cliente_sin_auth, sesion):
     setup = cliente_sin_auth.get("/api/v1/auth/totp/setup")
     assert setup.status_code == 200
     assert setup.json()["secret"] != old_secret
+
+
+def test_cli_restablece_password_y_revoca_sesiones(sesion, monkeypatch, capsys):
+    usuario = crear_usuario(sesion)
+    monkeypatch.setattr(
+        cli,
+        "SessionLocal",
+        lambda: Session(bind=sesion.get_bind(), join_transaction_mode="create_savepoint"),
+    )
+
+    cli.reset_password(usuario.email, True)
+
+    output = capsys.readouterr().out
+    temporary_password = next(
+        line.split(": ", 1)[1]
+        for line in output.splitlines()
+        if line.startswith("Contraseña temporal:")
+    )
+    sesion.refresh(usuario)
+    assert bool(usuario.must_change_password) is True
+    assert verify_password(temporary_password, usuario.password_hash)

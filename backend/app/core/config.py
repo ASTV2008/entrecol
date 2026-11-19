@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_name: str = "Entrecol API"
-    app_version: str = "0.1.0"
+    app_version: str = "1.0.0"
 
     # Base de datos (obligatorias: no tienen valor por defecto)
     db_host: str = "localhost"
