@@ -333,5 +333,6 @@ def test_cli_restablece_password_y_revoca_sesiones(sesion, monkeypatch, capsys):
         for line in output.splitlines()
         if line.startswith("Contraseña temporal:")
     )
-    assert usuario.must_change_password is True
+    sesion.refresh(usuario)
+    assert bool(usuario.must_change_password) is True
     assert verify_password(temporary_password, usuario.password_hash)

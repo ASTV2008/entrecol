@@ -2,7 +2,9 @@
 import argparse
 import getpass
 import secrets
+from contextlib import contextmanager
 from datetime import timedelta
+from collections.abc import Iterator
 
 from email_validator import EmailNotValidError, validate_email
 from sqlalchemy import delete, select
@@ -11,6 +13,25 @@ from app.core.config import get_settings
 from app.db.session import SessionLocal
 from app.models.seguridad import CodigoRecuperacion, EventoAuditoria, SesionAuth, Usuario
 from app.security.service import hash_password, utc_now
+
+
+@contextmanager
+def _transaction() -> Iterator:
+    """Abre una transacción compatible con sessionmaker y sesiones de prueba."""
+    if hasattr(SessionLocal, "begin"):
+        with SessionLocal.begin() as db:
+            yield db
+        return
+
+    db = SessionLocal()
+    try:
+        yield db
+        db.commit()
+    except BaseException:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 def create_admin() -> None:
@@ -27,7 +48,7 @@ def create_admin() -> None:
     if password != confirmation:
         raise SystemExit("Las contraseñas no coinciden.")
 
-    with SessionLocal.begin() as db:
+    with _transaction() as db:
         existing_admin = db.scalar(
             select(Usuario.id).where(Usuario.role == "admin", Usuario.is_active.is_(True)).limit(1)
         )
@@ -64,7 +85,7 @@ def purge_audit(confirm: bool) -> None:
         raise SystemExit("La purga requiere --confirm; se eliminarán eventos anteriores a la retención configurada.")
     settings = get_settings()
     cutoff = utc_now() - timedelta(days=settings.audit_retention_days)
-    with SessionLocal.begin() as db:
+    with _transaction() as db:
         deleted = db.execute(delete(EventoAuditoria).where(EventoAuditoria.created_at < cutoff)).rowcount
         db.add(
             EventoAuditoria(
@@ -85,7 +106,7 @@ def reset_password(email_input: str, confirm: bool) -> None:
     except EmailNotValidError as error:
         raise SystemExit(f"Correo inválido: {error}") from error
     temporary_password = secrets.token_urlsafe(24)
-    with SessionLocal.begin() as db:
+    with _transaction() as db:
         user = db.scalar(select(Usuario).where(Usuario.email == email).with_for_update())
         if user is None:
             raise SystemExit("No existe una cuenta con ese correo.")

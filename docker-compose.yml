@@ -47,6 +47,18 @@ services:
       TZ: America/Bogota
     ports:
       - "127.0.0.1:8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=3)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     volumes:
       - ./docs/bases_de_datos_iniciales:/data:ro,Z   # datos de la empresa (solo lectura)
 
